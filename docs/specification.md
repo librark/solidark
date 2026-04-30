@@ -399,9 +399,13 @@ Registration requirements:
 
 - Each class should expose a stable static `tag` name.
 - `Component.define()` should register a class under its static tag by default.
-- The package should provide one explicit function to register all built-in
-  elements, such as `defineSolidarkElements()`, if built-ins are not registered
-  as a side effect of importing the core entry point.
+- Each built-in component module should call `define()` in its own source file,
+  so importing `solidark/primitives/cuboid`, `solidark/feature/step`, or any
+  aggregate index that re-exports them makes the corresponding browser element
+  available immediately.
+- The package may keep `defineSolidarkElements()` as a compatibility helper that
+  returns the built-in component list, but it should not be the primary
+  registration mechanism.
 - Registration should be idempotent: calling `define()` for an already-defined
   compatible tag should not throw.
 - User components should use the same registration path as built-in components.
@@ -885,8 +889,8 @@ Potential package layout:
 - `solidark/kernel`: kernel selection helpers and shared evaluation logic.
 - `solidark/kernel/in-memory`: deterministic in-memory kernel for tests.
 - `solidark/kernel/opencascade`: OpenCascade.js adapter.
-- `solidark/elements`: built-in custom element registration helpers if kept
-  separate from the core entry point.
+- `solidark/elements`: aggregate built-in component exports and compatibility
+  helpers.
 - `solidark/mesh`: optional mesh conversion helpers if they are not part of
   the core entry point.
 - `solidark/viewer`: optional browser visualization helpers and custom elements.

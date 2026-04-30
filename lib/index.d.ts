@@ -33,6 +33,8 @@ export type KernelShape = {
   tag: string;
   properties: Record<string, unknown>;
   children: KernelShape[];
+  value?: unknown;
+  handles?: unknown[];
   disposed: boolean;
 };
 
@@ -147,6 +149,12 @@ export function kernelMethodForTag(tag: string): string | null;
 export function requireKernelMethod(kernel: Record<string, unknown>, tag: string): KernelMethod | null;
 export function createDescriptorKernel(): Kernel;
 export function createInMemoryKernel(): Kernel;
+export function constructOpenCascadeBinding(
+  openCascade: Record<string, unknown>,
+  names: string[],
+  args?: unknown[]
+): unknown;
+export function createOpenCascadeAdapter(openCascade: unknown): Kernel & { openCascade: unknown };
 export function loadOpenCascade(options?: {
   importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
   initOptions?: unknown;
