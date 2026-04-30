@@ -139,8 +139,10 @@ hidden in individual operations.
   their local origin by default.
 - Components that need non-centered local placement should use an explicit
   placement, transform, or `anchor` property rather than a `center` boolean.
-- Angles in the public CSG-style API: degrees, matching OpenSCAD expectations.
-- Internal angle conversion to radians may be performed by the kernel adapter.
+- Angles in every public API should be expressed in degrees, matching OpenSCAD
+  expectations.
+- Internal angle conversion to radians should be performed by the kernel adapter
+  whenever OpenCascade.js expects radians.
 - Vectors in HTML attributes should use space-separated numeric strings, such as
   `"10 0 0"`.
 - Vectors assigned through JavaScript properties may be provided as tuples,
@@ -188,8 +190,8 @@ Built-in modeling concepts should be represented by custom elements:
 - `<sol-fillet>`
 - `<sol-sketch>`
 
-The exact tag prefix may change before implementation, but the first release
-should choose one stable prefix and use it consistently.
+Built-in Solidark modeling elements should use the `sol-` custom element prefix
+consistently.
 
 ### HTML Example
 
@@ -279,7 +281,14 @@ export class Component extends HTMLElement {
     this.scheduleUpdate();
   }
 
-  render() {}
+  init(properties = {}) {
+    Object.assign(this, properties);
+    return this;
+  }
+
+  render() {
+    return this;
+  }
 
   load() {
     return SolidarkRuntime.load();
@@ -307,13 +316,29 @@ Required behavior:
   deterministic caching.
 - User components must be indistinguishable from built-in components after DOM
   normalization.
-- Components may expose `load()` and `evaluate()` convenience methods that
-  delegate to the shared runtime.
+- Components should expose `init()`, `render()`, and `load()` as core lifecycle
+  and helper methods.
+- Components may expose `evaluate()` as a convenience method that delegates to
+  the shared runtime.
+
+Initialization behavior:
+
+- `init()` should configure a component programmatically before or after it is
+  attached to the DOM.
+- `init()` should accept plain property values, assign them through the
+  component's public property surface, and return `this` for chaining.
+- `init()` should schedule render or evaluation when the configured properties
+  affect geometry.
+- `init()` should remain synchronous; asynchronous preparation belongs in
+  `load()` or explicit promises.
 
 Rendering behavior:
 
-- `render()` should normally return `this`; its effect is assigning
-  `this.content`, but it might allow for chaining when called programmatically.
+- `render()` should return `this` to allow chaining, following the same style as
+  `init()`.
+- `render()` should define child structure by assigning `this.content`.
+- Returning an HTML string from `render()` should not be a supported alternate
+  content path.
 - `render()` may be skipped by primitive leaf components whose geometry is fully
   described by attributes.
 - `render()` must not synchronously call expensive OpenCascade operations.
@@ -327,6 +352,8 @@ Lifecycle behavior:
 
 - `connectedCallback()` should remain synchronous and schedule the first render
   and evaluation.
+- `load()` should be the standard place for asynchronous component preparation,
+  including kernel loading or loading external model data.
 - `attributeChangedCallback()` should schedule re-rendering when geometry-affecting
   attributes change.
 - `disconnectedCallback()` should release or dereference evaluated kernel shapes
@@ -396,9 +423,10 @@ Normalization should:
 - Preserve stable names, ids, tags, and metadata.
 - Produce an inspectable intermediate representation for debugging and tests.
 
-The top-level `<sol-model>` element may contain one or more bodies. Multiple
-top-level bodies should remain separate unless explicitly wrapped in
-`<sol-union>`.
+The top-level `<sol-model>` element may contain one or more bodies. When it has
+multiple geometry-producing children, it should implicitly evaluate them as a
+union. Explicit `<sol-union>` may still be used inside a model for clarity or for
+localized boolean structure.
 
 ## Attributes and Properties
 
@@ -673,11 +701,12 @@ Runtime requirements:
   applications to await.
 - Rendering and evaluation should be scheduled after attribute changes and
   `content` assignment.
-- The scheduler may use promises, `queueMicrotask`, or `setTimeout` depending on
-  when custom element upgrades and DOM parsing need to settle.
-- If macro-task scheduling is needed, `setTimeout(..., 0)` is acceptable, but it
-  should be hidden behind a runtime scheduler rather than scattered through
-  component implementations.
+- The scheduler should prefer microtasks by default, using promises or
+  `queueMicrotask`.
+- The scheduler should use a macro-task such as `setTimeout(..., 0)` only when
+  custom element upgrade timing or DOM parsing requires it.
+- Scheduling details should be hidden behind a runtime scheduler rather than
+  scattered through component implementations.
 - Applications that care about bundle size, workers, caching, or custom
   OpenCascade.js builds should be able to configure the kernel loader before the
   first `load()` call.
@@ -759,6 +788,8 @@ Visualization requirements:
 
 - Provide a minimal browser viewer or viewer adapter that can display evaluated
   shapes.
+- Keep built-in `sol-*` elements focused on model definition and evaluation;
+  visualization should live in an optional viewer package or adapter.
 - Reuse or wrap the visualization approach already used by OpenCascade.js where
   practical.
 - Fall back to Solidark-generated triangulated meshes when a lower-level viewer
@@ -768,7 +799,7 @@ Visualization requirements:
 - Preserve component-to-geometry mapping where practical so changed or selected
   components can be highlighted.
 - Expose a small API suitable for development tools and tests, for example
-  `viewer.render(result)` or a `<sol-viewer for="model-id">` element.
+  `viewer.render(result)`.
 - Keep browser visualization optional for production modeling code so headless
   tests and server-side evaluation do not load viewer dependencies.
 
@@ -783,11 +814,16 @@ Initial export targets:
 
 Initial import targets:
 
-- STEP as an external shape component.
+- STEP as an external shape or assembly component.
+- STL as an imported mesh component that can participate in visualization and
+  mesh workflows.
 - BREP as a kernel-native external shape component.
 
+Imported STEP assemblies should preserve their hierarchy in the first release.
 Imported shapes should participate in transforms, booleans, features, and
-assemblies like any other Solidark shape.
+assemblies like any other Solidark shape when their geometry kind supports the
+requested operation. Imported STL meshes should remain mesh geometry unless
+explicitly converted or reconstructed into a B-Rep shape by a dedicated feature.
 
 ## Diagnostics and Errors
 
@@ -928,23 +964,7 @@ Out of scope unless this specification later changes:
 
 ## Open Questions
 
-- Should the top-level `<sol-model>` ever implicitly union children, or should
-  explicit `<sol-union>` always be required?
-- Should public angles follow OpenSCAD degrees everywhere, or should B-Rep
-  feature APIs accept radians for closer kernel alignment?
-- Which Componark lifecycle and helper conventions should Solidark copy exactly,
-  and which should be simplified for geometry-only modeling?
-- Should Solidark expose Web Components for interactive viewers later, or keep
-  built-in elements focused only on model definition and evaluation?
-- Should browser visualization start as an imperative viewer adapter, a
-  `<sol-viewer>` custom element, or both?
-- What custom element tag prefix should be stable for the first release?
-- Should `render()` always assign `this.content`, or should returning an HTML
-  string also be supported as a convenience while still setting `content`
-  internally?
-- Should the scheduler prefer microtasks by default and use `setTimeout` only
-  when custom element upgrade timing requires a macro-task?
-- Should imported STEP assemblies preserve hierarchy in the first release?
+No open questions are currently recorded.
 
 ## References
 
