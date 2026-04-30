@@ -2,7 +2,17 @@ import assert from 'node:assert/strict'
 import { it } from 'node:test'
 
 import { useInMemoryKernel } from '../lib/index.js'
-import { bootShowcase, createModelButton, createShowcaseApp, formatModelDetails, markSelected } from './main.js'
+import {
+  bootShowcase,
+  configureShowcaseKernel,
+  createModelButton,
+  formatEvaluationError,
+  createOpenCascadeInitOptions,
+  createShowcaseApp,
+  formatModelDetails,
+  markSelected,
+  showcaseKernelMode
+} from './main.js'
 
 function createDocumentStub () {
   const nodes = new Map([
@@ -71,7 +81,8 @@ it('creates a showcase app and selects models', async () => {
         evaluations.push(element.markup)
         return {
           model: { tag: element.localName, implicitUnion: true },
-          shapes: [{ tag: 'sol-union' }]
+          shapes: [{ tag: 'sol-union' }],
+          meshes: [{ tag: 'sol-union' }]
         }
       }
     },
@@ -79,6 +90,9 @@ it('creates a showcase app and selects models', async () => {
       return {
         render (result) {
           renders.push(result)
+          return this
+        },
+        clear () {
           return this
         }
       }
@@ -95,6 +109,37 @@ it('creates a showcase app and selects models', async () => {
   assert.equal(renders.length, 1)
   assert.equal(document.nodes.get('[data-title]').textContent, 'Parametric Bracket')
   assert.match(document.nodes.get('[data-details]').textContent, /sol-cuboid: 3/)
+})
+
+it('reports showcase evaluation errors', async () => {
+  const document = createDocumentStub()
+  const error = new Error('kernel failed')
+  let clears = 0
+  const app = createShowcaseApp({
+    document,
+    runtime: {
+      async evaluate () {
+        throw error
+      }
+    },
+    viewerFactory () {
+      return {
+        render () {
+          return this
+        },
+        clear () {
+          clears += 1
+          return this
+        }
+      }
+    }
+  })
+
+  await assert.rejects(() => app.selectModel('primitives'), error)
+
+  assert.equal(clears, 1)
+  assert.equal(document.nodes.get('[data-details]').textContent, 'Evaluation failed: kernel failed')
+  assert.equal(formatEvaluationError('bad input'), 'Evaluation failed: bad input')
 })
 
 it('createModelButton event handlers select models', () => {
@@ -130,17 +175,48 @@ it('formats model details and marks selected buttons', () => {
   assert.equal(list.children[1]['aria-current'], true)
   assert.equal(
     formatModelDetails(
-      { model: { tag: 'sol-model', implicitUnion: false }, shapes: [] },
+      { model: { tag: 'sol-model', implicitUnion: false }, shapes: [], meshes: [] },
       { 'sol-model': 1 }
     ),
-    'Root: sol-model\nShapes: 0\nImplicit union: no\nsol-model: 1'
+    'Root: sol-model\nShapes: 0\nMeshes: 0\nImplicit union: no\nsol-model: 1'
   )
+})
+
+it('configures showcase kernel loading modes', async () => {
+  const configured = []
+  const runtime = {
+    configure (options) {
+      configured.push(options)
+      return this
+    }
+  }
+
+  assert.equal(showcaseKernelMode(), 'memory')
+  assert.equal(showcaseKernelMode('http://localhost/showcase/'), 'opencascade')
+  assert.equal(showcaseKernelMode('http://localhost/showcase/?kernel=memory'), 'memory')
+  assert.equal(showcaseKernelMode({ search: '?kernel=opencascade' }), 'opencascade')
+  assert.equal(createOpenCascadeInitOptions().locateFile('opencascade.wasm.wasm'), '/node_modules/opencascade.js/dist/opencascade.wasm.wasm')
+  assert.equal(createOpenCascadeInitOptions({ wasmPath: '/kernel.wasm' }).locateFile('other.data'), 'other.data')
+  assert.equal(configureShowcaseKernel({ mode: 'memory', runtime }), 'memory')
+  assert.equal(configureShowcaseKernel({
+    kernelFactory (options) {
+      assert.equal(options.initOptions.locateFile('opencascade.wasm.wasm'), '/custom.wasm')
+      return { name: 'opencascade' }
+    },
+    mode: 'opencascade',
+    runtime,
+    wasmPath: '/custom.wasm'
+  }), 'opencascade')
+
+  assert.equal(configured.length, 2)
+  assert.equal(configured[0].kernel.name, 'in-memory')
+  assert.deepEqual(await configured[1].loader(), { name: 'opencascade' })
 })
 
 it('boots the showcase with default runtime wiring', async () => {
   useInMemoryKernel()
   const document = createDocumentStub()
-  const app = await bootShowcase(document)
+  const app = await bootShowcase(document, { mode: 'memory' })
 
   assert.equal(app.models[0].id, 'primitives')
   assert.equal(document.nodes.get('[data-title]').textContent, 'Primitive Set')

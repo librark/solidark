@@ -17,6 +17,7 @@ it('returns content types by extension', () => {
   assert.equal(contentType('main.js'), 'text/javascript; charset=utf-8')
   assert.equal(contentType('data.json'), 'application/json; charset=utf-8')
   assert.equal(contentType('icon.svg'), 'image/svg+xml; charset=utf-8')
+  assert.equal(contentType('opencascade.wasm.wasm'), 'application/wasm')
   assert.equal(contentType('part.stl'), 'application/octet-stream')
 })
 

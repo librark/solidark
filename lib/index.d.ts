@@ -174,11 +174,17 @@ export function constructOpenCascadeBinding(
 ): unknown;
 export function createOpenCascadeAdapter(openCascade: unknown): Kernel & { openCascade: unknown };
 export function loadOpenCascade(options?: {
-  importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
+  importer?: (specifier: string) => Promise<{
+    initOpenCascade?: (options?: unknown) => unknown;
+    default?: (options?: unknown) => unknown;
+  }>;
   initOptions?: unknown;
 }): Promise<unknown>;
 export function createOpenCascadeKernel(options?: {
-  importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
+  importer?: (specifier: string) => Promise<{
+    initOpenCascade?: (options?: unknown) => unknown;
+    default?: (options?: unknown) => unknown;
+  }>;
   initOptions?: unknown;
 }): Promise<Kernel & { openCascade: unknown }>;
 export function getGlobalKernel(target?: Record<string, unknown>): unknown;

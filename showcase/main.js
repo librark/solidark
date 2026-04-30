@@ -1,5 +1,7 @@
 import {
   SolidarkRuntime,
+  clearGlobalKernel,
+  createOpenCascadeKernel,
   createViewer,
   defineSolidarkElements,
   useInMemoryKernel
@@ -27,12 +29,21 @@ export function createShowcaseApp ({
     level.textContent = model.level
     summary.textContent = model.summary
     preview.innerHTML = model.markup
+    details.textContent = 'Evaluating model...'
 
     const element = preview.children[0]
-    const result = await runtime.evaluate(element)
-    viewer.render(result)
-    details.textContent = formatModelDetails(result, countModelTags(model.markup))
-    markSelected(list, model.id)
+    let result
+
+    try {
+      result = await runtime.evaluate(element)
+      viewer.render(result)
+      details.textContent = formatModelDetails(result, countModelTags(model.markup))
+      markSelected(list, model.id)
+    } catch (error) {
+      viewer.clear()
+      details.textContent = formatEvaluationError(error)
+      throw error
+    }
 
     return result
   }
@@ -62,6 +73,7 @@ export function formatModelDetails (result, tagCounts) {
   const lines = [
     `Root: ${result.model.tag}`,
     `Shapes: ${result.shapes.length}`,
+    `Meshes: ${result.meshes?.length || 0}`,
     `Implicit union: ${result.model.implicitUnion ? 'yes' : 'no'}`
   ]
 
@@ -72,16 +84,68 @@ export function formatModelDetails (result, tagCounts) {
   return lines.join('\n')
 }
 
+export function formatEvaluationError (error) {
+  const message = error instanceof Error ? error.message : String(error)
+
+  return `Evaluation failed: ${message}`
+}
+
 export function markSelected (list, id) {
   for (const child of list.children) {
     child.toggleAttribute('aria-current', child.dataset.modelId === id)
   }
 }
 
-export async function bootShowcase (document = globalThis.document) {
-  useInMemoryKernel()
+export function showcaseKernelMode (location = globalThis.location) {
+  if (!location) {
+    return 'memory'
+  }
+
+  const search = typeof location === 'string'
+    ? new URL(location, 'http://localhost').search
+    : location.search
+  const mode = new URLSearchParams(search).get('kernel')
+
+  return mode === 'memory' ? 'memory' : 'opencascade'
+}
+
+export function createOpenCascadeInitOptions ({
+  wasmPath = '/node_modules/opencascade.js/dist/opencascade.wasm.wasm'
+} = {}) {
+  return {
+    locateFile (path) {
+      return path.endsWith('.wasm') ? wasmPath : path
+    }
+  }
+}
+
+export function configureShowcaseKernel ({
+  kernelFactory = createOpenCascadeKernel,
+  location = globalThis.location,
+  mode = showcaseKernelMode(location),
+  runtime = SolidarkRuntime,
+  wasmPath
+} = {}) {
+  if (mode === 'memory') {
+    runtime.configure({ kernel: useInMemoryKernel() })
+    return 'memory'
+  }
+
+  clearGlobalKernel()
+  runtime.configure({
+    loader: () => kernelFactory({
+      initOptions: createOpenCascadeInitOptions({ wasmPath })
+    })
+  })
+  return 'opencascade'
+}
+
+export async function bootShowcase (document = globalThis.document, options = {}) {
+  const runtime = options.runtime || SolidarkRuntime
+
   defineSolidarkElements()
-  const app = createShowcaseApp({ document })
+  configureShowcaseKernel({ ...options, runtime })
+  const app = createShowcaseApp({ document, runtime })
   await app.selectModel('primitives')
   return app
 }
