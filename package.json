@@ -12,6 +12,8 @@
     "./base/component": "./lib/base/component.js",
     "./component": "./lib/base/component.js",
     "./elements": "./lib/elements.js",
+    "./export": "./lib/export/index.js",
+    "./export/*": "./lib/export/*.js",
     "./feature": "./lib/feature/index.js",
     "./feature/*": "./lib/feature/*.js",
     "./kernel": "./lib/kernel/index.js",
@@ -51,7 +53,9 @@
     "web-components"
   ],
   "dependencies": {
-    "opencascade.js": "1.1.1"
+    "@google/model-viewer": "4.1.0",
+    "opencascade.js": "1.1.1",
+    "three": "0.172.0"
   },
   "devDependencies": {
     "standard": "^17.1.0"

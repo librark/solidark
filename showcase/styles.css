@@ -123,6 +123,14 @@ body {
   width: 100%;
 }
 
+.solidark-model-viewer {
+  background: transparent;
+  display: block;
+  height: min(64vh, 620px);
+  min-height: 360px;
+  width: 100%;
+}
+
 .solidark-viewer-canvas:active {
   cursor: grabbing;
 }

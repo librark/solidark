@@ -50,6 +50,11 @@ export type ViewerTarget = {
   ownerDocument?: Document;
 };
 
+export type GlbObjectUrl = {
+  blob: Blob;
+  url: string;
+};
+
 export type KernelShape = {
   category: string;
   tag: string;
@@ -156,6 +161,14 @@ export function camelCase(value: string): string;
 export function parseVector(value: string | number[] | { x?: number; y?: number; z?: number }): number[];
 export function parseAttributeValue(value: string): boolean | number | number[] | string;
 export function stableStringify(value: unknown): string;
+export const GLB_MIME_TYPE: "model/gltf-binary";
+export function exportMeshesToGlb(meshes?: RenderableMesh[], options?: { generator?: string }): ArrayBuffer;
+export function createGlbBlob(meshes?: RenderableMesh[], options?: { generator?: string }): Blob;
+export function createGlbObjectUrl(
+  meshes?: RenderableMesh[],
+  options?: { generator?: string },
+  url?: { createObjectURL?: (blob: Blob) => string }
+): GlbObjectUrl;
 
 declare global {
   var kernel: unknown;
@@ -207,6 +220,11 @@ export function evaluateNode(node: NormalizedNode, kernel?: Kernel): KernelShape
 export function createViewer(target?: ViewerTarget | null): Viewer;
 export function createSceneSvg(shapes?: KernelShape[]): string;
 export function collectPrimitiveEntries(shapes: KernelShape[]): KernelShape[];
+export function createModelViewerScene(
+  target: ViewerTarget,
+  meshes?: RenderableMesh[],
+  options?: { urlApi?: typeof URL }
+): ModelViewerRenderer;
 export function createMeshSceneCanvas(target: ViewerTarget, meshes?: RenderableMesh[]): CanvasMeshRenderer;
 export function createMeshSceneSvg(meshes?: RenderableMesh[]): string;
 export function collectMeshTriangles(meshes?: RenderableMesh[]): ProjectedTriangle[];
@@ -216,6 +234,19 @@ export class Viewer {
   render(result: EvaluationResult | { shapes?: KernelShape[]; meshes?: RenderableMesh[] }): this;
   clear(): this;
   disposeRenderer(): this;
+}
+
+export class ModelViewerRenderer {
+  constructor(
+    target: ViewerTarget,
+    meshes?: RenderableMesh[],
+    options?: { urlApi?: typeof URL }
+  );
+  readonly target: ViewerTarget;
+  readonly meshes: RenderableMesh[];
+  object: GlbObjectUrl | null;
+  element: HTMLElement;
+  dispose(): this;
 }
 
 export class CanvasMeshRenderer {
