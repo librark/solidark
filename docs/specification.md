@@ -28,8 +28,12 @@ such as fillets, chamfers, shells, sweeps, lofts, and STEP exchange.
   native custom element lifecycle hooks.
 - Preserve access to B-Rep operations without forcing users to work directly
   with OpenCascade APIs for common modeling tasks.
+- Make CAD models natural to test with ordinary web-development tools and
+  test-driven development workflows.
 - Run in browsers and in DOM-capable worker or server-side JavaScript runtimes
   where custom elements and OpenCascade.js can be loaded.
+- Provide a direct browser visualization path so developers can inspect model
+  changes while iterating.
 - Produce precise CAD geometry suitable for engineering workflows and common
   export formats.
 
@@ -95,6 +99,23 @@ Every model should be reproducible from source code, element attributes, DOM
 properties, and parameters. Component properties should be plain serializable
 values where possible, so a model can be inspected, cached, tested, regenerated,
 and shared.
+
+### Testable by Design
+
+Testability is a core value proposition of Solidark. A model should feel natural
+to test for web developers and engineers who prefer test-driven development.
+
+Solidark should make it straightforward to:
+
+- Instantiate components in tests.
+- Set attributes or properties as test inputs.
+- Await rendering, loading, and evaluation with explicit promises.
+- Assert normalized model trees without loading the CAD kernel.
+- Assert evaluated geometry through bounds, volume, topology, diagnostics, or
+  exported artifacts.
+- Run fast unit tests for parsing, validation, scheduling, and tree
+  normalization.
+- Keep slower kernel-backed geometry tests focused and explicit.
 
 ### Kernel Isolation
 
@@ -304,7 +325,8 @@ Rendering behavior:
 
 Lifecycle behavior:
 
-- `connectedCallback()` should schedule the first render and evaluation.
+- `connectedCallback()` should remain synchronous and schedule the first render
+  and evaluation.
 - `attributeChangedCallback()` should schedule re-rendering when geometry-affecting
   attributes change.
 - `disconnectedCallback()` should release or dereference evaluated kernel shapes
@@ -629,10 +651,9 @@ Component-level convenience:
 class AsyncPart extends Component {
   static tag = "async-part";
 
-  async connectedCallback() {
+  connectedCallback() {
     super.connectedCallback();
-    await this.load();
-    await this.evaluate();
+    this.ready = this.load().then(() => this.evaluate());
   }
 }
 ```
@@ -643,7 +664,13 @@ Runtime requirements:
   kernel adapter.
 - `component.load()` should delegate to `SolidarkRuntime.load()`.
 - Multiple simultaneous load calls must share the same in-flight promise.
-- Component lifecycle hooks must not block synchronously on WebAssembly loading.
+- Browser custom element lifecycle callbacks, including `connectedCallback()`,
+  are expected to run synchronously. Solidark components must start asynchronous
+  work from lifecycle callbacks without making the callbacks themselves blocking
+  or relying on the browser to await them.
+- Components that initiate asynchronous work should expose an explicit promise,
+  such as `ready`, `loaded`, or the return value of `evaluate()`, for tests and
+  applications to await.
 - Rendering and evaluation should be scheduled after attribute changes and
   `content` assignment.
 - The scheduler may use promises, `queueMicrotask`, or `setTimeout` depending on
@@ -722,6 +749,29 @@ type MeshOptions = {
 The mesh API should preserve a mapping from rendered triangles or groups back to
 source components where practical, enabling selection and inspection in a CAD UI.
 
+## Browser Visualization
+
+Solidark should provide a direct way to visualize model changes in the browser.
+This does not make Solidark a full CAD application, but it should give
+developers immediate feedback while editing components and tests.
+
+Visualization requirements:
+
+- Provide a minimal browser viewer or viewer adapter that can display evaluated
+  shapes.
+- Reuse or wrap the visualization approach already used by OpenCascade.js where
+  practical.
+- Fall back to Solidark-generated triangulated meshes when a lower-level viewer
+  integration is more appropriate.
+- Support refreshing the display after a component property, attribute, or DOM
+  subtree changes.
+- Preserve component-to-geometry mapping where practical so changed or selected
+  components can be highlighted.
+- Expose a small API suitable for development tools and tests, for example
+  `viewer.render(result)` or a `<sol-viewer for="model-id">` element.
+- Keep browser visualization optional for production modeling code so headless
+  tests and server-side evaluation do not load viewer dependencies.
+
 ## Import and Export
 
 Initial export targets:
@@ -771,6 +821,7 @@ Potential package layout:
   separate from the core entry point.
 - `solidark/mesh`: optional mesh conversion helpers if they are not part of
   the core entry point.
+- `solidark/viewer`: optional browser visualization helpers and custom elements.
 - `solidark/testing`: geometry assertions and test helpers.
 
 The core package should avoid importing viewer integrations by default.
@@ -795,14 +846,37 @@ Requirements:
 ## Testing and Conformance
 
 The specification should be backed by tests once implementation begins.
+Testability should be treated as part of the public developer experience, not as
+an internal maintenance detail.
+
+Source and test layout:
+
+- Every implemented source file must be accompanied by a corresponding unit test
+  file in the same directory.
+- Test files should use Node's built-in test framework, `node:test`.
+- Assertions should use `node:assert/strict` unless a focused helper from
+  `solidark/testing` makes the intent clearer.
+- The recommended naming convention is `name.js` with `name.test.js` beside it.
+- The project should aim for 100% test coverage at all times.
+- Lines may be excluded from coverage only when explicitly ignored for a
+  deliberate convenience case, and the ignore should remain narrow.
+- Generated files, declaration files, and static assets may be excluded from the
+  adjacent-test rule.
+- Browser-only behavior should still have adjacent unit tests for scheduling,
+  DOM integration, and API contracts; broader browser rendering checks may live
+  in an integration test suite.
 
 Recommended test categories:
 
+- Attribute and property parsing.
+- Component lifecycle scheduling.
+- Async load and evaluation promise behavior.
 - Primitive dimensions and bounding boxes.
 - Transform composition.
 - Boolean operation behavior.
 - B-Rep feature behavior.
 - Serialization of normalized trees.
+- Browser visualization update behavior.
 - Export smoke tests.
 - Kernel object disposal tests.
 - Cross-runtime tests for browsers and DOM-capable worker or server
@@ -832,6 +906,7 @@ The first useful release should include:
 - `<sol-extrude>` and `<sol-revolve>`.
 - `<sol-fillet>` and `<sol-chamfer>`.
 - Triangulation for display.
+- Minimal browser visualization adapter for inspecting evaluated model changes.
 - STEP and STL export.
 - Clear diagnostics.
 - JSDoc annotations and TypeScript declaration files.
@@ -842,7 +917,7 @@ Features that can wait:
 - Full assembly metadata export.
 - Advanced selectors.
 - Loft and sweep if they complicate the first kernel adapter.
-- Browser viewer components.
+- Full browser viewer components beyond the minimal visualization adapter.
 - Custom OpenCascade.js build tooling.
 
 Out of scope unless this specification later changes:
@@ -861,6 +936,8 @@ Out of scope unless this specification later changes:
   and which should be simplified for geometry-only modeling?
 - Should Solidark expose Web Components for interactive viewers later, or keep
   built-in elements focused only on model definition and evaluation?
+- Should browser visualization start as an imperative viewer adapter, a
+  `<sol-viewer>` custom element, or both?
 - What custom element tag prefix should be stable for the first release?
 - Should `render()` always assign `this.content`, or should returning an HTML
   string also be supported as a convenience while still setting `content`
