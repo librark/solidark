@@ -23,9 +23,23 @@ export type NormalizedNode = {
 export type EvaluationResult = {
   element: Component;
   model: NormalizedNode;
-  shapes: unknown[];
+  shapes: KernelShape[];
+  meshes: RenderableMesh[];
   diagnostics: unknown[];
   dispose(): void;
+};
+
+export type RenderableMesh = {
+  tag: string;
+  vertices: number[][];
+  triangles: number[][];
+};
+
+export type ProjectedTriangle = {
+  meshIndex: number;
+  vertices: number[][];
+  projected: number[][];
+  depth: number;
 };
 
 export type KernelShape = {
@@ -82,6 +96,10 @@ export type Kernel = {
   step: KernelMethod;
   stl: KernelMethod;
   brep: KernelMethod;
+  toMesh?: (
+    entry: KernelShape,
+    options?: Record<string, unknown>
+  ) => RenderableMesh | RenderableMesh[] | null | undefined;
   dispose(entry: KernelShape): void;
 };
 
@@ -173,10 +191,14 @@ export function loadGlobalKernel(options?: {
 export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): Kernel;
 export function evaluateNode(node: NormalizedNode, kernel?: Kernel): KernelShape[];
 export function createViewer(target?: { innerHTML?: string; textContent?: string } | null): Viewer;
+export function createSceneSvg(shapes?: KernelShape[]): string;
+export function collectPrimitiveEntries(shapes: KernelShape[]): KernelShape[];
+export function createMeshSceneSvg(meshes?: RenderableMesh[]): string;
+export function collectMeshTriangles(meshes?: RenderableMesh[]): ProjectedTriangle[];
 
 export class Viewer {
   constructor(target?: { innerHTML?: string; textContent?: string } | null);
-  render(result: EvaluationResult): this;
+  render(result: EvaluationResult | { shapes?: KernelShape[]; meshes?: RenderableMesh[] }): this;
   clear(): this;
 }
 

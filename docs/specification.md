@@ -757,6 +757,7 @@ export type EvaluationResult = {
   element: Component;
   model: NormalizedModel;
   shapes: Shape[];
+  meshes: RenderableMesh[];
   diagnostics: Diagnostic[];
   bounds?: BoundingBox;
   dispose(): void;
@@ -791,6 +792,12 @@ should make Three.js interop straightforward.
 Mesh options:
 
 ```ts
+type RenderableMesh = {
+  tag: string;
+  vertices: number[][];
+  triangles: number[][];
+};
+
 type MeshOptions = {
   linearDeflection?: number;
   angularDeflection?: number;
@@ -802,6 +809,10 @@ type MeshOptions = {
 
 The mesh API should preserve a mapping from rendered triangles or groups back to
 source components where practical, enabling selection and inspection in a CAD UI.
+Kernels may expose `toMesh(shape, options)` so the runtime can include
+`result.meshes` beside exact B-Rep-backed `result.shapes`. The in-memory kernel
+is not required to generate meshes, which keeps unit tests deterministic and
+fast unless a test explicitly targets visualization output.
 
 ## Browser Visualization
 
