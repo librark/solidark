@@ -109,15 +109,29 @@ body {
   font-family: "SFMono-Regular", Consolas, monospace;
   justify-content: center;
   min-height: 320px;
-  padding: 24px;
+  overflow: hidden;
+  padding: 0;
   text-align: center;
   white-space: pre-wrap;
+}
+
+.solidark-viewer-canvas {
+  cursor: grab;
+  display: block;
+  height: min(64vh, 620px);
+  min-height: 360px;
+  width: 100%;
+}
+
+.solidark-viewer-canvas:active {
+  cursor: grabbing;
 }
 
 .viewer-surface svg {
   display: block;
   height: min(54vh, 520px);
   max-height: 100%;
+  padding: 24px;
   width: 100%;
 }
 

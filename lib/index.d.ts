@@ -42,6 +42,14 @@ export type ProjectedTriangle = {
   depth: number;
 };
 
+export type ViewerTarget = {
+  innerHTML?: string;
+  textContent?: string;
+  appendChild?: (child: unknown) => unknown;
+  replaceChildren?: (...children: unknown[]) => void;
+  ownerDocument?: Document;
+};
+
 export type KernelShape = {
   category: string;
   tag: string;
@@ -196,16 +204,30 @@ export function loadGlobalKernel(options?: {
 }): unknown;
 export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): Kernel;
 export function evaluateNode(node: NormalizedNode, kernel?: Kernel): KernelShape[];
-export function createViewer(target?: { innerHTML?: string; textContent?: string } | null): Viewer;
+export function createViewer(target?: ViewerTarget | null): Viewer;
 export function createSceneSvg(shapes?: KernelShape[]): string;
 export function collectPrimitiveEntries(shapes: KernelShape[]): KernelShape[];
+export function createMeshSceneCanvas(target: ViewerTarget, meshes?: RenderableMesh[]): CanvasMeshRenderer;
 export function createMeshSceneSvg(meshes?: RenderableMesh[]): string;
 export function collectMeshTriangles(meshes?: RenderableMesh[]): ProjectedTriangle[];
 
 export class Viewer {
-  constructor(target?: { innerHTML?: string; textContent?: string } | null);
+  constructor(target?: ViewerTarget | null);
   render(result: EvaluationResult | { shapes?: KernelShape[]; meshes?: RenderableMesh[] }): this;
   clear(): this;
+  disposeRenderer(): this;
+}
+
+export class CanvasMeshRenderer {
+  constructor(canvas: HTMLCanvasElement, meshes?: RenderableMesh[]);
+  attach(): this;
+  dispose(): this;
+  reset(): this;
+  startDrag(event: PointerEvent): this;
+  dragView(event: PointerEvent): this;
+  stopDrag(): this;
+  zoomBy(event: WheelEvent): this;
+  draw(): this;
 }
 
 export class Runtime {
