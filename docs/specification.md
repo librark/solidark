@@ -627,7 +627,20 @@ participate in caching keys.
 
 ## Kernel Adapter
 
-OpenCascade.js integration should live behind a kernel adapter.
+OpenCascade.js integration should live behind a kernel adapter. Kernel
+implementations should live under a dedicated kernel module directory so the
+runtime can use different backends without changing component code:
+
+- `solidark/kernel/opencascade`: the default OpenCascade.js-backed adapter.
+- `solidark/kernel/in-memory`: a deterministic descriptor adapter for unit
+  tests, snapshots, and lightweight previews.
+
+Because Web Component constructors cannot receive arbitrary constructor
+arguments from markup, the active kernel should be stored on `globalThis.kernel`.
+The runtime should read that global kernel during `load()`. If no kernel has
+been installed, `load()` should install the OpenCascade adapter by default.
+Tests should replace `globalThis.kernel` with the in-memory adapter before
+evaluation.
 
 ```ts
 export type Kernel = {
@@ -710,6 +723,8 @@ Runtime requirements:
 - Applications that care about bundle size, workers, caching, or custom
   OpenCascade.js builds should be able to configure the kernel loader before the
   first `load()` call.
+- Unit tests should be able to install `solidark/kernel/in-memory` through
+  `globalThis.kernel` without loading OpenCascade.js or WebAssembly.
 
 ## Evaluation Pipeline
 
@@ -852,6 +867,8 @@ Diagnostics should include:
 Potential package layout:
 
 - `solidark`: core public API.
+- `solidark/kernel`: kernel selection helpers and shared evaluation logic.
+- `solidark/kernel/in-memory`: deterministic in-memory kernel for tests.
 - `solidark/kernel/opencascade`: OpenCascade.js adapter.
 - `solidark/elements`: built-in custom element registration helpers if kept
   separate from the core entry point.

@@ -68,20 +68,43 @@ export const UnionComponent: typeof Component;
 export const WorkplaneComponent: typeof Component;
 export const builtInElements: readonly (typeof Component)[];
 export function defineSolidarkElements(): readonly (typeof Component)[];
+
+declare global {
+  var kernel: unknown;
+}
+
 export function normalizeElement(element: Element): NormalizedNode;
 export function producesGeometry(node: NormalizedNode): boolean;
 export function createDescriptorKernel(): unknown;
+export function createInMemoryKernel(): unknown;
+export function loadOpenCascade(options?: {
+  importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
+  initOptions?: unknown;
+}): Promise<unknown>;
+export function createOpenCascadeKernel(options?: {
+  importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
+  initOptions?: unknown;
+}): Promise<unknown>;
+export function getGlobalKernel(target?: Record<string, unknown>): unknown;
+export function setGlobalKernel(kernel: unknown, target?: Record<string, unknown>): unknown;
+export function clearGlobalKernel(target?: Record<string, unknown>): Record<string, unknown>;
+export function loadGlobalKernel(options?: {
+  target?: Record<string, unknown>;
+  factory?: () => unknown;
+}): unknown;
+export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): unknown;
 export function evaluateNode(node: NormalizedNode, kernel?: unknown): unknown[];
-export function createViewer(target?: { textContent?: string } | null): Viewer;
+export function createViewer(target?: { innerHTML?: string; textContent?: string } | null): Viewer;
 
 export class Viewer {
-  constructor(target?: { textContent?: string } | null);
+  constructor(target?: { innerHTML?: string; textContent?: string } | null);
   render(result: EvaluationResult): this;
   clear(): this;
 }
 
 export class Runtime {
-  configure(options?: { loader?: () => unknown }): this;
+  constructor(options?: { kernel?: unknown; loader?: () => unknown });
+  configure(options?: { kernel?: unknown; loader?: () => unknown }): this;
   load(): Promise<unknown>;
   schedule<T>(callback: () => T, options?: { macro?: boolean }): Promise<T>;
   evaluate(element: Element): Promise<EvaluationResult>;

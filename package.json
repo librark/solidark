@@ -9,8 +9,11 @@
     ".": "./lib/index.js",
     "./component": "./lib/component.js",
     "./elements": "./lib/elements.js",
-    "./kernel": "./lib/kernel.js",
+    "./kernel": "./lib/kernel/index.js",
+    "./kernel/in-memory": "./lib/kernel/in-memory.js",
+    "./kernel/opencascade": "./lib/kernel/opencascade.js",
     "./normalize": "./lib/normalize.js",
+    "./opencascade": "./lib/kernel/opencascade.js",
     "./runtime": "./lib/runtime.js",
     "./viewer": "./lib/viewer.js"
   },
@@ -34,6 +37,9 @@
     "opencascade",
     "web-components"
   ],
+  "dependencies": {
+    "opencascade.js": "1.1.1"
+  },
   "devDependencies": {
     "standard": "^17.1.0"
   },

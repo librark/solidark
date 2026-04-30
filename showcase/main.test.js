@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { it } from 'node:test'
 
+import { useInMemoryKernel } from '../lib/index.js'
 import { bootShowcase, createModelButton, createShowcaseApp, formatModelDetails, markSelected } from './main.js'
 
 function createDocumentStub () {
@@ -137,6 +138,7 @@ it('formats model details and marks selected buttons', () => {
 })
 
 it('boots the showcase with default runtime wiring', async () => {
+  useInMemoryKernel()
   const document = createDocumentStub()
   const app = await bootShowcase(document)
 

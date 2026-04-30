@@ -114,6 +114,25 @@ body {
   white-space: pre-wrap;
 }
 
+.viewer-surface svg {
+  display: block;
+  height: min(54vh, 520px);
+  max-height: 100%;
+  width: 100%;
+}
+
+.viewer-surface text {
+  fill: #233241;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.viewer-surface .empty {
+  fill: #64748b;
+  font-size: 16px;
+}
+
 .model-details {
   background: #e9eef3;
   border: 1px solid #d4dde6;
