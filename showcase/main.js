@@ -1,7 +1,8 @@
 import {
   SolidarkRuntime,
   createViewer,
-  defineSolidarkElements
+  defineSolidarkElements,
+  useInMemoryKernel
 } from '../lib/index.js'
 import { countModelTags, getShowcaseModel, listShowcaseSummaries } from './models.js'
 
@@ -78,6 +79,7 @@ export function markSelected (list, id) {
 }
 
 export async function bootShowcase (document = globalThis.document) {
+  useInMemoryKernel()
   defineSolidarkElements()
   const app = createShowcaseApp({ document })
   await app.selectModel('primitives')

@@ -867,6 +867,15 @@ Diagnostics should include:
 Potential package layout:
 
 - `solidark`: core public API.
+- `solidark/base`: base `Component` hierarchy and component class helpers.
+- `solidark/primitives`: primitive element components, with one primitive per
+  source file.
+- `solidark/transform`: transformation element components, with one transform
+  per source file.
+- `solidark/operation`: CSG operation components, with one operation per source
+  file.
+- `solidark/feature`: B-Rep features, sketch actions, and file importers, with
+  one component per source file.
 - `solidark/kernel`: kernel selection helpers and shared evaluation logic.
 - `solidark/kernel/in-memory`: deterministic in-memory kernel for tests.
 - `solidark/kernel/opencascade`: OpenCascade.js adapter.
