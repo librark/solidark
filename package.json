@@ -27,6 +27,7 @@
     "./runtime": "./lib/runtime.js",
     "./transform": "./lib/transform/index.js",
     "./transform/*": "./lib/transform/*.js",
+    "./utils": "./lib/base/utils.js",
     "./viewer": "./lib/viewer.js"
   },
   "files": [

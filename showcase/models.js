@@ -1,10 +1,12 @@
+import { html } from '../lib/index.js'
+
 export const showcaseModels = Object.freeze([
   {
     id: 'primitives',
     title: 'Primitive Set',
     level: 'Basic',
     summary: 'Centered cuboid, cylinder, sphere, cone, and torus primitives in a grouped model.',
-    markup: `
+    markup: html`
       <sol-model id="primitive-set">
         <sol-group>
           <sol-translate by="-48 0 0">
@@ -31,7 +33,7 @@ export const showcaseModels = Object.freeze([
     title: 'Parametric Bracket',
     level: 'Intermediate',
     summary: 'A CSG-style bracket made from cuboids and cylinders using union and difference.',
-    markup: `
+    markup: html`
       <sol-model id="bracket">
         <sol-difference>
           <sol-union>
@@ -58,7 +60,7 @@ export const showcaseModels = Object.freeze([
     title: 'Notched Wheel',
     level: 'Intermediate',
     summary: 'A wheel-like solid using repeated subtractive cuboids around a cylinder.',
-    markup: `
+    markup: html`
       <sol-model id="notched-wheel">
         <sol-difference>
           <sol-cylinder radius="36" height="10"></sol-cylinder>
@@ -92,7 +94,7 @@ export const showcaseModels = Object.freeze([
     title: 'Electronics Enclosure',
     level: 'Advanced',
     summary: 'A shell-oriented part with mounting posts, chamfer intent, and imported-board placeholder.',
-    markup: `
+    markup: html`
       <sol-model id="electronics-enclosure">
         <sol-chamfer distance="1.5">
           <sol-difference>
@@ -123,7 +125,7 @@ export const showcaseModels = Object.freeze([
     title: 'Lofted Handle Concept',
     level: 'Advanced',
     summary: 'A high-level feature example combining sketches, loft intent, and filleted supports.',
-    markup: `
+    markup: html`
       <sol-model id="lofted-handle">
         <sol-fillet radius="3">
           <sol-union>

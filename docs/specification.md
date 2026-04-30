@@ -207,7 +207,7 @@ consistently.
 ### Component Example
 
 ```js
-import { Component } from "solidark";
+import { Component, html } from "solidark";
 
 export class MountingPlate extends Component {
   static tag = "mounting-plate";
@@ -222,7 +222,7 @@ export class MountingPlate extends Component {
   render() {
     const { width, depth, height, holeRadius } = this.properties;
 
-    this.content = `
+    this.content = html`
       <sol-difference>
         <sol-cuboid size="${width} ${depth} ${height}"></sol-cuboid>
         <sol-cylinder
@@ -644,22 +644,28 @@ evaluation.
 
 ```ts
 export type Kernel = {
-  makeBox(options: BoxOptions): KernelShape;
-  makeSphere(options: SphereOptions): KernelShape;
-  transform(shape: KernelShape, placement: Placement): KernelShape;
-  booleanUnion(shapes: KernelShape[], options?: BooleanOptions): KernelShape;
-  booleanDifference(
-    base: KernelShape,
-    tools: KernelShape[],
-    options?: BooleanOptions
-  ): KernelShape;
+  cuboid(options: CuboidOptions): KernelShape;
+  sphere(options: SphereOptions): KernelShape;
+  cylinder(options: CylinderOptions): KernelShape;
+  translate(options: TranslateOptions, children: KernelShape[]): KernelShape;
+  union(options: UnionOptions, children: KernelShape[]): KernelShape;
+  difference(options: DifferenceOptions, children: KernelShape[]): KernelShape;
+  fillet(options: FilletOptions, children: KernelShape[]): KernelShape;
+  sketch(options: SketchOptions, children: KernelShape[]): KernelShape;
+  step(options: StepImportOptions): KernelShape;
+  stl(options: StlImportOptions): KernelShape;
   triangulate(shape: KernelShape, options?: MeshOptions): Mesh;
   exportStep(shape: KernelShape, options?: StepExportOptions): Uint8Array;
   dispose(shape: KernelShape): void;
 };
 ```
 
-The real adapter may be broader, but it should isolate:
+The real adapter must cover every built-in component with explicit methods named
+after Solidark operations (`cuboid`, `translate`, `union`, `fillet`, `sketch`,
+`stl`, and so on). Evaluation should map component tags to these explicit
+methods rather than calling generic `primitive(tag, ...)` or
+`operation(tag, ...)` methods. The adapter may still expose additional helper
+methods internally, but it should isolate:
 
 - OpenCascade module loading.
 - WebAssembly lifecycle.

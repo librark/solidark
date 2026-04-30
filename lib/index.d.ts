@@ -28,6 +28,61 @@ export type EvaluationResult = {
   dispose(): void;
 };
 
+export type KernelShape = {
+  category: string;
+  tag: string;
+  properties: Record<string, unknown>;
+  children: KernelShape[];
+  disposed: boolean;
+};
+
+export type KernelMethod = (
+  properties?: Record<string, unknown>,
+  children?: KernelShape[]
+) => KernelShape;
+
+export type Kernel = {
+  name: string;
+  cuboid: KernelMethod;
+  sphere: KernelMethod;
+  cylinder: KernelMethod;
+  cone: KernelMethod;
+  torus: KernelMethod;
+  circle: KernelMethod;
+  rectangle: KernelMethod;
+  polygon: KernelMethod;
+  polyline: KernelMethod;
+  translate: KernelMethod;
+  rotate: KernelMethod;
+  scale: KernelMethod;
+  mirror: KernelMethod;
+  matrix: KernelMethod;
+  place: KernelMethod;
+  workplane: KernelMethod;
+  union: KernelMethod;
+  difference: KernelMethod;
+  intersection: KernelMethod;
+  group: KernelMethod;
+  fillet: KernelMethod;
+  chamfer: KernelMethod;
+  shell: KernelMethod;
+  offset: KernelMethod;
+  extrude: KernelMethod;
+  revolve: KernelMethod;
+  sweep: KernelMethod;
+  loft: KernelMethod;
+  section: KernelMethod;
+  face: KernelMethod;
+  sketch: KernelMethod;
+  move: KernelMethod;
+  line: KernelMethod;
+  close: KernelMethod;
+  step: KernelMethod;
+  stl: KernelMethod;
+  brep: KernelMethod;
+  dispose(entry: KernelShape): void;
+};
+
 export const BrepComponent: typeof Component;
 export const ChamferComponent: typeof Component;
 export const CircleComponent: typeof Component;
@@ -68,6 +123,11 @@ export const UnionComponent: typeof Component;
 export const WorkplaneComponent: typeof Component;
 export const builtInElements: readonly (typeof Component)[];
 export function defineSolidarkElements(): readonly (typeof Component)[];
+export const html: typeof String.raw;
+export function camelCase(value: string): string;
+export function parseVector(value: string | number[] | { x?: number; y?: number; z?: number }): number[];
+export function parseAttributeValue(value: string): boolean | number | number[] | string;
+export function stableStringify(value: unknown): string;
 
 declare global {
   var kernel: unknown;
@@ -75,8 +135,18 @@ declare global {
 
 export function normalizeElement(element: Element): NormalizedNode;
 export function producesGeometry(node: NormalizedNode): boolean;
-export function createDescriptorKernel(): unknown;
-export function createInMemoryKernel(): unknown;
+export const kernelMethodDefinitions: readonly {
+  tag: string;
+  method: string;
+  category: string;
+}[];
+export const kernelMethodByTag: Readonly<Record<string, string>>;
+export const kernelCategoryByMethod: Readonly<Record<string, string>>;
+export const kernelTagByMethod: Readonly<Record<string, string>>;
+export function kernelMethodForTag(tag: string): string | null;
+export function requireKernelMethod(kernel: Record<string, unknown>, tag: string): KernelMethod | null;
+export function createDescriptorKernel(): Kernel;
+export function createInMemoryKernel(): Kernel;
 export function loadOpenCascade(options?: {
   importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
   initOptions?: unknown;
@@ -84,7 +154,7 @@ export function loadOpenCascade(options?: {
 export function createOpenCascadeKernel(options?: {
   importer?: (specifier: string) => Promise<{ initOpenCascade?: (options?: unknown) => Promise<unknown> }>;
   initOptions?: unknown;
-}): Promise<unknown>;
+}): Promise<Kernel & { openCascade: unknown }>;
 export function getGlobalKernel(target?: Record<string, unknown>): unknown;
 export function setGlobalKernel(kernel: unknown, target?: Record<string, unknown>): unknown;
 export function clearGlobalKernel(target?: Record<string, unknown>): Record<string, unknown>;
@@ -92,8 +162,8 @@ export function loadGlobalKernel(options?: {
   target?: Record<string, unknown>;
   factory?: () => unknown;
 }): unknown;
-export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): unknown;
-export function evaluateNode(node: NormalizedNode, kernel?: unknown): unknown[];
+export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): Kernel;
+export function evaluateNode(node: NormalizedNode, kernel?: Kernel): KernelShape[];
 export function createViewer(target?: { innerHTML?: string; textContent?: string } | null): Viewer;
 
 export class Viewer {
