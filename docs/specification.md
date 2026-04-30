@@ -183,7 +183,7 @@ should not require TypeScript and should not require JSX.
 Built-in modeling concepts should be represented by custom elements:
 
 - `<sol-model>`
-- `<sol-box>`
+- `<sol-cuboid>`
 - `<sol-cylinder>`
 - `<sol-translate>`
 - `<sol-difference>`
@@ -198,7 +198,7 @@ consistently.
 ```html
 <sol-model id="mounting-plate">
   <sol-difference>
-    <sol-box size="80 40 8"></sol-box>
+    <sol-cuboid size="80 40 8"></sol-cuboid>
     <sol-cylinder radius="4" height="24"></sol-cylinder>
   </sol-difference>
 </sol-model>
@@ -224,7 +224,7 @@ export class MountingPlate extends Component {
 
     this.content = `
       <sol-difference>
-        <sol-box size="${width} ${depth} ${height}"></sol-box>
+        <sol-cuboid size="${width} ${depth} ${height}"></sol-cuboid>
         <sol-cylinder
           radius="${holeRadius}"
           height="${height * 3}"
@@ -932,7 +932,7 @@ The first useful release should include:
 - OpenCascade.js kernel adapter.
 - Promise-based runtime loading through `load()`.
 - Deferred render and evaluation scheduling.
-- Core 3D primitives: `<sol-box>`, `<sol-sphere>`,
+- Core 3D primitives: `<sol-cuboid>`, `<sol-sphere>`,
   `<sol-cylinder>`, `<sol-cone>`.
 - Core transforms: `<sol-translate>`, `<sol-rotate>`,
   `<sol-scale>`, `<sol-mirror>`.

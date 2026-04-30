@@ -1,0 +1,41 @@
+{
+  "name": "solidark",
+  "version": "0.1.0",
+  "description": "Web Component based constructive solid geometry for JavaScript.",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./component": "./lib/component.js",
+    "./elements": "./lib/elements.js",
+    "./kernel": "./lib/kernel.js",
+    "./normalize": "./lib/normalize.js",
+    "./runtime": "./lib/runtime.js",
+    "./viewer": "./lib/viewer.js"
+  },
+  "files": [
+    "lib",
+    "showcase",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "standard": "standard",
+    "standard:fix": "standard --fix",
+    "showcase": "node showcase/server.js",
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include='lib/**/*.js' --test-coverage-include='showcase/**/*.js' --test-coverage-exclude='lib/**/*.test.js' --test-coverage-exclude='showcase/**/*.test.js' --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=100"
+  },
+  "keywords": [
+    "cad",
+    "csg",
+    "opencascade",
+    "web-components"
+  ],
+  "devDependencies": {
+    "standard": "^17.1.0"
+  },
+  "license": "MIT"
+}
