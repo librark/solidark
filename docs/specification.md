@@ -368,7 +368,8 @@ Proposed hierarchy:
 
 ```text
 Component
-  ModelComponent
+  StructureComponent
+    ModelComponent
   GeometryComponent
     PrimitiveComponent
     OperationComponent
@@ -889,6 +890,8 @@ Potential package layout:
 
 - `solidark`: core public API.
 - `solidark/base`: base `Component` hierarchy and component class helpers.
+- `solidark/structures`: higher-level structural elements such as `sol-model`,
+  with one structure per source file.
 - `solidark/primitives`: primitive element components, with one primitive per
   source file.
 - `solidark/transform`: transformation element components, with one transform
