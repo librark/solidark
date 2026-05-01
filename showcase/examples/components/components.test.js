@@ -10,7 +10,7 @@ it('renders component-authored showcase models', () => {
 
   assert.equal(enclosure.render(), enclosure)
   assert.equal(enclosure.content.includes('<sol-chamfer'), true)
-  assert.equal(enclosure.content.includes('<sol-stl'), true)
+  assert.equal(enclosure.content.includes('<sol-difference'), true)
 
   assert.equal(handle.render(), handle)
   assert.equal(handle.content.includes('<sol-loft'), true)

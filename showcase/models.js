@@ -29,7 +29,7 @@ export const showcaseModels = Object.freeze([
     level: 'Advanced',
     format: 'Component',
     source: './examples/enclosure.html',
-    summary: 'A shell-oriented part with mounting posts, chamfer intent, and imported-board placeholder.'
+    summary: 'A shell-oriented part with mounting posts, a hollowed interior, and chamfer intent.'
   },
   {
     id: 'lofted-handle',
@@ -38,6 +38,14 @@ export const showcaseModels = Object.freeze([
     format: 'Component',
     source: './examples/lofted-handle.html',
     summary: 'A high-level feature example combining sketches, loft intent, and filleted supports.'
+  },
+  {
+    id: 'profile-operations',
+    title: 'Profile Operations',
+    level: 'Advanced',
+    format: 'HTML',
+    source: './examples/profile-operations.html',
+    summary: 'Sketch profiles turned into solids through extrusion, revolution, and path sweep.'
   }
 ])
 

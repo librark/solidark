@@ -24,7 +24,6 @@ export class ShowcaseEnclosureComponent extends Component {
               </sol-translate>
             </sol-union>
             <sol-cuboid size="108 58 20"></sol-cuboid>
-            <sol-stl src="board-placeholder.stl"></sol-stl>
           </sol-difference>
         </sol-chamfer>
       </sol-model>

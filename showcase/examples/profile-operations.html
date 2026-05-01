@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Profile Operations</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js"
+        }
+      }
+    </script>
+    <script type="module" src="/node_modules/@google/model-viewer/dist/model-viewer.min.js"></script>
+  </head>
+  <body>
+    <main class="standalone-shell">
+      <header class="standalone-header">
+        <a href="../">Showcase</a>
+        <p>Advanced HTML-authored model</p>
+        <h1>Profile Operations</h1>
+      </header>
+      <sol-model id="profile-operations" class="source-model" data-showcase-model>
+        <sol-translate by="-42 0 0">
+          <sol-extrude height="16">
+            <sol-sketch>
+              <sol-move point="-10 -7 0"></sol-move>
+              <sol-line point="10 -7 0"></sol-line>
+              <sol-line point="10 7 0"></sol-line>
+              <sol-line point="-10 7 0"></sol-line>
+              <sol-close></sol-close>
+            </sol-sketch>
+          </sol-extrude>
+        </sol-translate>
+        <sol-revolve axis="0 1 0" angle="360">
+          <sol-sketch>
+            <sol-move point="10 -7 0"></sol-move>
+            <sol-line point="15 -7 0"></sol-line>
+            <sol-line point="15 7 0"></sol-line>
+            <sol-line point="10 7 0"></sol-line>
+            <sol-close></sol-close>
+          </sol-sketch>
+        </sol-revolve>
+        <sol-translate by="42 0 0">
+          <sol-sweep>
+            <sol-sketch>
+              <sol-move point="-4 -4 0"></sol-move>
+              <sol-line point="4 -4 0"></sol-line>
+              <sol-line point="4 4 0"></sol-line>
+              <sol-line point="-4 4 0"></sol-line>
+              <sol-close></sol-close>
+            </sol-sketch>
+            <sol-sketch>
+              <sol-move point="-18 0 0"></sol-move>
+              <sol-line point="-6 9 0"></sol-line>
+              <sol-line point="6 9 0"></sol-line>
+              <sol-line point="18 0 0"></sol-line>
+            </sol-sketch>
+          </sol-sweep>
+        </sol-translate>
+      </sol-model>
+      <sol-viewer class="viewer-surface" for="profile-operations"></sol-viewer>
+    </main>
+    <script type="module" src="../standalone.js"></script>
+  </body>
+</html>
