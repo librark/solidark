@@ -632,45 +632,62 @@ participate in caching keys.
 
 ## Kernel Adapter
 
-OpenCascade.js integration should live behind a kernel adapter. Kernel
-implementations should live under a dedicated kernel module directory so the
-runtime can use different backends without changing component code:
+OpenCascade.js integration should live behind a kernel adapter. The abstract
+kernel contract and `globalThis.kernel` accessors should live under
+`solidark/base/kernel` so component classes can depend on a small stable
+interface. Concrete runtime adapters should live under `solidark/runtime/kernel`
+so the runtime can use different backends without changing component code:
 
-- `solidark/kernel/opencascade`: the default OpenCascade.js-backed adapter.
-- `solidark/kernel/in-memory`: a deterministic descriptor adapter for unit
-  tests, snapshots, and lightweight previews.
+- `solidark/base/kernel`: the abstract `Kernel` class, global kernel accessors,
+  and the deterministic `MemoryKernel` implementation for unit tests,
+  snapshots, and lightweight previews.
+- `solidark/runtime/kernel/opencascade`: the default `OpencascadeKernel`
+  implementation backed by OpenCascade.js.
 
 Because Web Component constructors cannot receive arbitrary constructor
 arguments from markup, the active kernel should be stored on `globalThis.kernel`.
 The runtime should read that global kernel during `load()`. If no kernel has
 been installed, `load()` should install the OpenCascade adapter by default.
 Tests should replace `globalThis.kernel` with the in-memory adapter before
-evaluation.
+evaluation. The `solidark/kernel/*` package paths may remain compatibility
+aliases for the current public kernel modules, but source ownership should
+follow the `base/kernel` and `runtime/kernel` split.
 
 ```ts
-export type Kernel = {
-  cuboid(options: CuboidOptions): KernelShape;
-  sphere(options: SphereOptions): KernelShape;
-  cylinder(options: CylinderOptions): KernelShape;
-  translate(options: TranslateOptions, children: KernelShape[]): KernelShape;
-  union(options: UnionOptions, children: KernelShape[]): KernelShape;
-  difference(options: DifferenceOptions, children: KernelShape[]): KernelShape;
-  fillet(options: FilletOptions, children: KernelShape[]): KernelShape;
-  sketch(options: SketchOptions, children: KernelShape[]): KernelShape;
-  step(options: StepImportOptions): KernelShape;
-  stl(options: StlImportOptions): KernelShape;
-  triangulate(shape: KernelShape, options?: MeshOptions): Mesh;
-  exportStep(shape: KernelShape, options?: StepExportOptions): Uint8Array;
+export abstract class Kernel {
+  name: string;
+  createShape(
+    category: string,
+    tag: string,
+    options?: Record<string, unknown>,
+    children?: KernelShape[]
+  ): KernelShape;
+  abstract cuboid(options: CuboidOptions): KernelShape;
+  abstract sphere(options: SphereOptions): KernelShape;
+  abstract cylinder(options: CylinderOptions): KernelShape;
+  abstract translate(options: TranslateOptions, children: KernelShape[]): KernelShape;
+  abstract union(options: UnionOptions, children: KernelShape[]): KernelShape;
+  abstract difference(options: DifferenceOptions, children: KernelShape[]): KernelShape;
+  abstract fillet(options: FilletOptions, children: KernelShape[]): KernelShape;
+  abstract sketch(options: SketchOptions, children: KernelShape[]): KernelShape;
+  abstract step(options: StepImportOptions): KernelShape;
+  abstract stl(options: StlImportOptions): KernelShape;
+  toMesh?(shape: KernelShape, options?: MeshOptions): Mesh | Mesh[] | null;
   dispose(shape: KernelShape): void;
-};
+}
+
+export class MemoryKernel extends Kernel {}
+export class OpencascadeKernel extends MemoryKernel {}
 ```
 
 The real adapter must cover every built-in component with explicit methods named
 after Solidark operations (`cuboid`, `translate`, `union`, `fillet`, `sketch`,
-`stl`, and so on). Evaluation should map component tags to these explicit
-methods rather than calling generic `primitive(tag, ...)` or
-`operation(tag, ...)` methods. The adapter may still expose additional helper
-methods internally, but it should isolate:
+`stl`, and so on). Each Solidark component subclass should declare the kernel
+method that defines its own behavior and should resolve the active kernel from
+`globalThis.kernel` at evaluation time. The evaluator may still walk the tree
+centrally, but it should delegate shape construction back to the component class
+instead of keeping component behavior in a central tag switch. The adapter may
+still expose additional helper methods internally, but it should isolate:
 
 - OpenCascade module loading.
 - WebAssembly lifecycle.
@@ -734,8 +751,8 @@ Runtime requirements:
 - Applications that care about bundle size, workers, caching, or custom
   OpenCascade.js builds should be able to configure the kernel loader before the
   first `load()` call.
-- Unit tests should be able to install `solidark/kernel/in-memory` through
-  `globalThis.kernel` without loading OpenCascade.js or WebAssembly.
+- Unit tests should be able to install `MemoryKernel` from `solidark/base/kernel`
+  through `globalThis.kernel` without loading OpenCascade.js or WebAssembly.
 
 ## Evaluation Pipeline
 
@@ -747,7 +764,7 @@ Evaluation should proceed through these phases:
 4. Normalize the DOM tree into an internal model tree.
 5. Validate component properties and child geometry kinds.
 6. Resolve parameters and inherited context.
-7. Compile primitives and sketches to kernel shapes.
+7. Delegate each component node to its component class.
 8. Apply transforms and placements.
 9. Apply CSG operations and B-Rep features.
 10. Heal or validate the resulting topology if requested.
@@ -900,9 +917,12 @@ Potential package layout:
   file.
 - `solidark/feature`: B-Rep features, sketch actions, and file importers, with
   one component per source file.
-- `solidark/kernel`: kernel selection helpers and shared evaluation logic.
-- `solidark/kernel/in-memory`: deterministic in-memory kernel for tests.
-- `solidark/kernel/opencascade`: OpenCascade.js adapter.
+- `solidark/base/kernel`: abstract `Kernel` class, `MemoryKernel`, and global
+  kernel accessors.
+- `solidark/runtime`: runtime scheduling, loading, flushing, and evaluation.
+- `solidark/runtime/kernel`: kernel selection helpers and concrete runtime
+  adapters.
+- `solidark/runtime/kernel/opencascade`: `OpencascadeKernel` adapter.
 - `solidark/elements`: aggregate built-in component exports and compatibility
   helpers.
 - `solidark/mesh`: optional mesh conversion helpers if they are not part of

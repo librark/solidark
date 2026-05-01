@@ -1,8 +1,23 @@
 export class Component extends HTMLElement {
   static tag: string;
+  static category: string;
+  static geometryKind: string | null;
   static defaultProperties: Record<string, unknown>;
   static observedAttributes: string[];
+  static kernelMethod: string | null;
+  static readonly kernel: unknown;
   static define(tag?: string): typeof Component;
+  static evaluateNode(
+    node: Partial<NormalizedNode>,
+    children: KernelShape[],
+    kernel?: Kernel
+  ): KernelShape[];
+  static createKernelShape(
+    properties?: Record<string, unknown>,
+    children?: KernelShape[],
+    kernel?: Kernel
+  ): KernelShape;
+  readonly kernel: unknown;
   readonly properties: Record<string, unknown>;
   content: string;
   init(properties?: Record<string, unknown>): this;
@@ -83,8 +98,61 @@ export type KernelMethod = (
   children?: KernelShape[]
 ) => KernelShape;
 
-export type Kernel = {
+export abstract class Kernel {
   name: string;
+  constructor(options?: { name?: string });
+  createShape(
+    category: string,
+    tag: string,
+    properties?: Record<string, unknown>,
+    children?: KernelShape[]
+  ): KernelShape;
+  toMesh(
+    entry: KernelShape,
+    options?: Record<string, unknown>
+  ): RenderableMesh | RenderableMesh[] | null | undefined;
+  dispose(entry: KernelShape): void;
+  abstract cuboid: KernelMethod;
+  abstract sphere: KernelMethod;
+  abstract cylinder: KernelMethod;
+  abstract cone: KernelMethod;
+  abstract torus: KernelMethod;
+  abstract circle: KernelMethod;
+  abstract rectangle: KernelMethod;
+  abstract polygon: KernelMethod;
+  abstract polyline: KernelMethod;
+  abstract translate: KernelMethod;
+  abstract rotate: KernelMethod;
+  abstract scale: KernelMethod;
+  abstract mirror: KernelMethod;
+  abstract matrix: KernelMethod;
+  abstract place: KernelMethod;
+  abstract workplane: KernelMethod;
+  abstract union: KernelMethod;
+  abstract difference: KernelMethod;
+  abstract intersection: KernelMethod;
+  abstract group: KernelMethod;
+  abstract fillet: KernelMethod;
+  abstract chamfer: KernelMethod;
+  abstract shell: KernelMethod;
+  abstract offset: KernelMethod;
+  abstract extrude: KernelMethod;
+  abstract revolve: KernelMethod;
+  abstract sweep: KernelMethod;
+  abstract loft: KernelMethod;
+  abstract section: KernelMethod;
+  abstract face: KernelMethod;
+  abstract sketch: KernelMethod;
+  abstract move: KernelMethod;
+  abstract line: KernelMethod;
+  abstract close: KernelMethod;
+  abstract step: KernelMethod;
+  abstract stl: KernelMethod;
+  abstract brep: KernelMethod;
+}
+
+export class MemoryKernel extends Kernel {
+  constructor();
   cuboid: KernelMethod;
   sphere: KernelMethod;
   cylinder: KernelMethod;
@@ -122,12 +190,12 @@ export type Kernel = {
   step: KernelMethod;
   stl: KernelMethod;
   brep: KernelMethod;
-  toMesh?: (
-    entry: KernelShape,
-    options?: Record<string, unknown>
-  ) => RenderableMesh | RenderableMesh[] | null | undefined;
-  dispose(entry: KernelShape): void;
-};
+}
+
+export class OpencascadeKernel extends MemoryKernel {
+  openCascade: unknown;
+  constructor(openCascade: unknown);
+}
 
 export const BrepComponent: typeof Component;
 export const ChamferComponent: typeof Component;
@@ -199,14 +267,14 @@ export const kernelCategoryByMethod: Readonly<Record<string, string>>;
 export const kernelTagByMethod: Readonly<Record<string, string>>;
 export function kernelMethodForTag(tag: string): string | null;
 export function requireKernelMethod(kernel: Record<string, unknown>, tag: string): KernelMethod | null;
-export function createDescriptorKernel(): Kernel;
-export function createInMemoryKernel(): Kernel;
+export function createDescriptorKernel(): MemoryKernel;
+export function createInMemoryKernel(): MemoryKernel;
 export function constructOpenCascadeBinding(
   openCascade: Record<string, unknown>,
   names: string[],
   args?: unknown[]
 ): unknown;
-export function createOpenCascadeAdapter(openCascade: unknown): Kernel & { openCascade: unknown };
+export function createOpenCascadeAdapter(openCascade: unknown): OpencascadeKernel;
 export function loadOpenCascade(options?: {
   importer?: (specifier: string) => Promise<{
     initOpenCascade?: (options?: unknown) => unknown;
@@ -220,7 +288,7 @@ export function createOpenCascadeKernel(options?: {
     default?: (options?: unknown) => unknown;
   }>;
   initOptions?: unknown;
-}): Promise<Kernel & { openCascade: unknown }>;
+}): Promise<OpencascadeKernel>;
 export function getGlobalKernel(target?: Record<string, unknown>): unknown;
 export function setGlobalKernel(kernel: unknown, target?: Record<string, unknown>): unknown;
 export function clearGlobalKernel(target?: Record<string, unknown>): Record<string, unknown>;
@@ -228,7 +296,7 @@ export function loadGlobalKernel(options?: {
   target?: Record<string, unknown>;
   factory?: () => unknown;
 }): unknown;
-export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): Kernel;
+export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): MemoryKernel;
 export function evaluateNode(node: NormalizedNode, kernel?: Kernel): KernelShape[];
 export function createViewer(target?: ViewerTarget | null): Viewer;
 export function createSceneSvg(shapes?: KernelShape[]): string;
