@@ -136,6 +136,16 @@ export function formatModelDetails (result, tagCounts) {
 
 export function formatEvaluationError (error) {
   const message = error instanceof Error ? error.message : String(error)
+  const [diagnostic] = Array.isArray(error?.diagnostics) ? error.diagnostics : []
+
+  if (diagnostic) {
+    return [
+      `Evaluation failed: ${diagnostic.cause}`,
+      `Component: ${diagnostic.path}`,
+      `Kernel method: ${diagnostic.method}`,
+      `Stage: ${diagnostic.stage}`
+    ].join('\n')
+  }
 
   return `Evaluation failed: ${message}`
 }

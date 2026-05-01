@@ -60,8 +60,19 @@ export type EvaluationResult = {
   model: NormalizedNode;
   shapes: KernelShape[];
   meshes: RenderableMesh[];
-  diagnostics: unknown[];
+  diagnostics: EvaluationDiagnostic[];
   dispose(): void;
+};
+
+export type EvaluationDiagnostic = {
+  level: string;
+  stage: string;
+  tag: string;
+  category?: string;
+  method: string;
+  path: string;
+  properties: Record<string, unknown>;
+  cause: string;
 };
 
 export type RenderableMesh = {
@@ -202,6 +213,13 @@ export class MemoryKernel extends Kernel {
 export class OpencascadeKernel extends MemoryKernel {
   openCascade: unknown;
   constructor(openCascade: unknown);
+}
+
+export class SolidarkEvaluationError extends Error {
+  diagnostic: EvaluationDiagnostic;
+  diagnostics: EvaluationDiagnostic[];
+  cause?: unknown;
+  constructor(diagnostic: EvaluationDiagnostic, cause?: unknown);
 }
 
 export const BrepComponent: typeof Component;

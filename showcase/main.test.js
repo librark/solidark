@@ -201,6 +201,19 @@ it('reports showcase evaluation errors', async () => {
   assert.equal(clears, 1)
   assert.equal(document.nodes.get('[data-details]').textContent, 'Evaluation failed: kernel failed')
   assert.equal(formatEvaluationError('bad input'), 'Evaluation failed: bad input')
+  assert.equal(formatEvaluationError({
+    diagnostics: [{
+      cause: 'OpenCascade binding not found: Missing_Binding',
+      method: 'cuboid',
+      path: 'sol-model > sol-cuboid[0]',
+      stage: 'evaluate'
+    }]
+  }), [
+    'Evaluation failed: OpenCascade binding not found: Missing_Binding',
+    'Component: sol-model > sol-cuboid[0]',
+    'Kernel method: cuboid',
+    'Stage: evaluate'
+  ].join('\n'))
 })
 
 it('reports sol-viewer refresh errors when no clear method is present', async () => {
