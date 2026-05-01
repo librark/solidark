@@ -4,7 +4,8 @@ export class Component extends HTMLElement {
   static geometryKind: string | null;
   static defaultProperties: Record<string, unknown>;
   static observedAttributes: string[];
-  static kernelMethod: string | null;
+  static shapeTag: string | null;
+  static shapeCategory: string | null;
   static readonly kernel: unknown;
   static define(tag?: string): typeof Component;
   static evaluateNode(
@@ -17,6 +18,12 @@ export class Component extends HTMLElement {
     children?: KernelShape[],
     kernel?: Kernel
   ): KernelShape;
+  static build(
+    properties: Record<string, unknown>,
+    children: KernelShape[],
+    kernel: Kernel
+  ): KernelShape | null;
+  static decorateKernelShape(shape: KernelShape): KernelShape;
   readonly kernel: unknown;
   readonly properties: Record<string, unknown>;
   content: string;
@@ -84,8 +91,9 @@ export type GlbObjectUrl = {
 };
 
 export type KernelShape = {
-  category: string;
-  tag: string;
+  method: string;
+  category?: string;
+  tag?: string;
   properties: Record<string, unknown>;
   children: KernelShape[];
   value?: unknown;
@@ -102,8 +110,7 @@ export abstract class Kernel {
   name: string;
   constructor(options?: { name?: string });
   createShape(
-    category: string,
-    tag: string,
+    method: string,
     properties?: Record<string, unknown>,
     children?: KernelShape[]
   ): KernelShape;
@@ -257,16 +264,6 @@ declare global {
 
 export function normalizeElement(element: Element): NormalizedNode;
 export function producesGeometry(node: NormalizedNode): boolean;
-export const kernelMethodDefinitions: readonly {
-  tag: string;
-  method: string;
-  category: string;
-}[];
-export const kernelMethodByTag: Readonly<Record<string, string>>;
-export const kernelCategoryByMethod: Readonly<Record<string, string>>;
-export const kernelTagByMethod: Readonly<Record<string, string>>;
-export function kernelMethodForTag(tag: string): string | null;
-export function requireKernelMethod(kernel: Record<string, unknown>, tag: string): KernelMethod | null;
 export function createDescriptorKernel(): MemoryKernel;
 export function createInMemoryKernel(): MemoryKernel;
 export function constructOpenCascadeBinding(

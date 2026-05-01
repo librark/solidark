@@ -651,14 +651,17 @@ been installed, `load()` should install the OpenCascade adapter by default.
 Tests should replace `globalThis.kernel` with the in-memory adapter before
 evaluation. The `solidark/kernel/*` package paths may remain compatibility
 aliases for the current public kernel modules, but source ownership should
-follow the `base/kernel` and `runtime/kernel` split.
+follow the `base/kernel` and `runtime/kernel` split. The `base/kernel`
+directory must not reference Solidark custom element names, `sol-` tags, DOM
+categories, or any other higher-level library modules. It is a core dependency
+that other library layers may import, not a layer that may import or know about
+those callers.
 
 ```ts
 export abstract class Kernel {
   name: string;
   createShape(
-    category: string,
-    tag: string,
+    method: string,
     options?: Record<string, unknown>,
     children?: KernelShape[]
   ): KernelShape;
@@ -682,12 +685,18 @@ export class OpencascadeKernel extends MemoryKernel {}
 
 The real adapter must cover every built-in component with explicit methods named
 after Solidark operations (`cuboid`, `translate`, `union`, `fillet`, `sketch`,
-`stl`, and so on). Each Solidark component subclass should declare the kernel
-method that defines its own behavior and should resolve the active kernel from
-`globalThis.kernel` at evaluation time. The evaluator may still walk the tree
+`stl`, and so on). Each Solidark component subclass should define its geometry
+by calling the active kernel directly from a component method dedicated to shape
+construction, such as `build(properties, children, kernel)`. `render()`
+should remain focused on synchronous DOM/markup composition; it should not run
+kernel work because the production kernel may be loaded asynchronously and
+OpenCascade operations may be expensive. The evaluator may still walk the tree
 centrally, but it should delegate shape construction back to the component class
-instead of keeping component behavior in a central tag switch. The adapter may
-still expose additional helper methods internally, but it should isolate:
+instead of keeping component behavior in a central tag switch. The component
+layer may annotate kernel results with Solidark DOM metadata such as `tag` or
+`category`; the base kernel layer should only deal in kernel operation names and
+kernel-owned data. The adapter may still expose additional helper methods
+internally, but it should isolate:
 
 - OpenCascade module loading.
 - WebAssembly lifecycle.
