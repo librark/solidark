@@ -1,4 +1,4 @@
-import { Component, html } from '../../../lib/index.js'
+import { Component, html } from '../../../lib/base/index.js'
 
 export class ShowcaseLoftedHandleComponent extends Component {
   static tag = 'showcase-lofted-handle'

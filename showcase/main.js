@@ -1,8 +1,5 @@
-import {
-  SolidarkRuntime,
-  createViewer,
-  defineSolidarkElements
-} from '../lib/index.js'
+import { SolidarkRuntime } from '../lib/runtime/index.js'
+import { createViewer } from '../lib/external/viewer/renderer.js'
 import './examples/components/enclosure.js'
 import './examples/components/lofted-handle.js'
 import { configureShowcaseKernel } from './kernel.js'
@@ -139,8 +136,10 @@ export function markSelected (list, id) {
 export async function bootShowcase (document = globalThis.document, options = {}) {
   const runtime = options.runtime || SolidarkRuntime
 
-  defineSolidarkElements()
   configureShowcaseKernel({ ...options, runtime })
+  const { defineSolidarkElements } = await import('../lib/elements.js')
+
+  defineSolidarkElements()
   const app = createShowcaseApp({ document, modelLoader: options.modelLoader, runtime })
   await app.selectModel('primitives')
   return app

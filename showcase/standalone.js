@@ -1,12 +1,20 @@
-import { defineSolidarkElements } from '../lib/index.js'
 import { configureShowcaseKernel } from './kernel.js'
 
-export function bootStandaloneShowcase ({
+export async function bootStandaloneShowcase ({
   configureKernel = configureShowcaseKernel,
-  defineElements = defineSolidarkElements
+  defineElements
 } = {}) {
-  defineElements()
-  return configureKernel()
+  const mode = configureKernel()
+  const define = defineElements || await loadSolidarkElements()
+
+  define()
+  return mode
+}
+
+async function loadSolidarkElements () {
+  const { defineSolidarkElements } = await import('../lib/elements.js')
+
+  return defineSolidarkElements
 }
 
 /* node:coverage ignore next 3 */

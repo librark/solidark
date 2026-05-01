@@ -1,9 +1,9 @@
 import {
-  SolidarkRuntime,
   clearGlobalKernel,
   createOpenCascadeKernel,
   useInMemoryKernel
-} from '../lib/index.js'
+} from '../lib/runtime/kernel/index.js'
+import { SolidarkRuntime } from '../lib/runtime/index.js'
 
 export function showcaseKernelMode (location = globalThis.location) {
   if (!location) {
