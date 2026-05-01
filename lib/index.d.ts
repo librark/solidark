@@ -11,6 +11,19 @@ export class Component extends HTMLElement {
   evaluate(): Promise<EvaluationResult>;
 }
 
+export class ViewerComponent extends Component {
+  static tag: "sol-viewer";
+  static category: "external";
+  static geometryKind: null;
+  refresh(
+    target?: Element | null,
+    options?: { runtime?: { evaluate(element: Element): Promise<EvaluationResult> } }
+  ): Promise<EvaluationResult>;
+  clear(): this;
+  showError(error: unknown): this;
+  resolveTarget(): Element | null;
+}
+
 export type NormalizedNode = {
   tag: string;
   category: string;

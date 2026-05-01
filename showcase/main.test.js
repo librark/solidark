@@ -22,7 +22,7 @@ function createDocumentStub () {
     ['[data-level]', createElementStub('p')],
     ['[data-summary]', createElementStub('p')],
     ['[data-details]', createElementStub('pre')],
-    ['[data-viewer]', createElementStub('pre')]
+    ['[data-viewer]', createElementStub('sol-viewer')]
   ])
 
   return {
@@ -111,6 +111,37 @@ it('creates a showcase app and selects models', async () => {
   assert.match(document.nodes.get('[data-details]').textContent, /sol-cuboid: 3/)
 })
 
+it('uses sol-viewer refresh when the showcase viewer target provides it', async () => {
+  const document = createDocumentStub()
+  const viewerTarget = document.nodes.get('[data-viewer]')
+  const refreshed = []
+  const runtime = {
+    name: 'runtime'
+  }
+  const result = {
+    model: { tag: 'sol-model', implicitUnion: false },
+    shapes: [{ tag: 'sol-union' }],
+    meshes: [{ tag: 'sol-union' }]
+  }
+
+  viewerTarget.refresh = async (element, options) => {
+    refreshed.push([element.markup, options.runtime])
+    return result
+  }
+  const app = createShowcaseApp({
+    document,
+    runtime,
+    viewerFactory () {
+      throw new Error('viewer factory should not be used')
+    }
+  })
+
+  assert.equal(await app.selectModel('primitives'), result)
+  assert.equal(refreshed.length, 1)
+  assert.equal(refreshed[0][1], runtime)
+  assert.match(document.nodes.get('[data-details]').textContent, /Meshes: 1/)
+})
+
 it('reports showcase evaluation errors', async () => {
   const document = createDocumentStub()
   const error = new Error('kernel failed')
@@ -140,6 +171,25 @@ it('reports showcase evaluation errors', async () => {
   assert.equal(clears, 1)
   assert.equal(document.nodes.get('[data-details]').textContent, 'Evaluation failed: kernel failed')
   assert.equal(formatEvaluationError('bad input'), 'Evaluation failed: bad input')
+})
+
+it('reports sol-viewer refresh errors when no clear method is present', async () => {
+  const document = createDocumentStub()
+  const error = new Error('viewer failed')
+
+  document.nodes.get('[data-viewer]').refresh = async () => {
+    throw error
+  }
+  const app = createShowcaseApp({
+    document,
+    runtime: {},
+    viewerFactory () {
+      throw new Error('viewer factory should not be used')
+    }
+  })
+
+  await assert.rejects(() => app.selectModel('primitives'), error)
+  assert.equal(document.nodes.get('[data-details]').textContent, 'Evaluation failed: viewer failed')
 })
 
 it('createModelButton event handlers select models', () => {

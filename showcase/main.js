@@ -20,7 +20,9 @@ export function createShowcaseApp ({
   const summary = document.querySelector('[data-summary]')
   const details = document.querySelector('[data-details]')
   const viewerTarget = document.querySelector('[data-viewer]')
-  const viewer = viewerFactory(viewerTarget)
+  const viewer = typeof viewerTarget.refresh === 'function'
+    ? viewerTarget
+    : viewerFactory(viewerTarget)
 
   async function selectModel (id) {
     const model = getShowcaseModel(id)
@@ -35,12 +37,13 @@ export function createShowcaseApp ({
     let result
 
     try {
-      result = await runtime.evaluate(element)
-      viewer.render(result)
+      result = typeof viewer.refresh === 'function'
+        ? await viewer.refresh(element, { runtime })
+        : await renderWithViewer(viewer, runtime, element)
       details.textContent = formatModelDetails(result, countModelTags(model.markup))
       markSelected(list, model.id)
     } catch (error) {
-      viewer.clear()
+      clearViewer(viewer)
       details.textContent = formatEvaluationError(error)
       throw error
     }
@@ -54,6 +57,19 @@ export function createShowcaseApp ({
     selectModel,
     models: listShowcaseSummaries(),
     viewer
+  }
+}
+
+async function renderWithViewer (viewer, runtime, element) {
+  const result = await runtime.evaluate(element)
+
+  viewer.render(result)
+  return result
+}
+
+function clearViewer (viewer) {
+  if (typeof viewer.clear === 'function') {
+    viewer.clear()
   }
 }
 

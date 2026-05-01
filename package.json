@@ -14,6 +14,8 @@
     "./elements": "./lib/elements.js",
     "./export": "./lib/export/index.js",
     "./export/*": "./lib/export/*.js",
+    "./external": "./lib/external/index.js",
+    "./external/*": "./lib/external/*.js",
     "./feature": "./lib/feature/index.js",
     "./feature/*": "./lib/feature/*.js",
     "./kernel": "./lib/kernel/index.js",
