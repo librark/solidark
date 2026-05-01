@@ -28,7 +28,16 @@
           </div>
           <p data-summary></p>
         </header>
-        <sol-viewer class="viewer-surface" data-viewer></sol-viewer>
+        <section class="model-stage">
+          <sol-viewer class="viewer-surface" data-viewer></sol-viewer>
+          <section class="source-panel" aria-label="Selected model source">
+            <header class="source-header">
+              <h3>HTML Source</h3>
+              <span data-source-path></span>
+            </header>
+            <pre class="model-source"><code data-source-code></code></pre>
+          </section>
+        </section>
         <pre class="model-details" data-details></pre>
         <div class="model-preview" data-preview hidden></div>
       </section>

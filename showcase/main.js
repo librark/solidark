@@ -7,6 +7,14 @@ import { countModelTags, getShowcaseModel, listShowcaseSummaries, loadShowcaseMo
 
 export { configureShowcaseKernel, createOpenCascadeInitOptions, showcaseKernelMode } from './kernel.js'
 
+const HTML_ESCAPES = Object.freeze({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+})
+
 export function createShowcaseApp ({
   document,
   modelLoader = loadShowcaseModel,
@@ -19,6 +27,8 @@ export function createShowcaseApp ({
   const level = document.querySelector('[data-level]')
   const summary = document.querySelector('[data-summary]')
   const details = document.querySelector('[data-details]')
+  const sourceCode = document.querySelector('[data-source-code]')
+  const sourcePath = document.querySelector('[data-source-path]')
   const viewerTarget = document.querySelector('[data-viewer]')
   const viewer = typeof viewerTarget.refresh === 'function'
     ? viewerTarget
@@ -31,6 +41,8 @@ export function createShowcaseApp ({
     level.textContent = `${summaryModel.level} · ${summaryModel.format}`
     summary.textContent = summaryModel.summary
     details.textContent = 'Evaluating model...'
+    sourcePath.textContent = summaryModel.source
+    sourceCode.innerHTML = ''
 
     let result
 
@@ -40,6 +52,7 @@ export function createShowcaseApp ({
       await waitForPreviewUpdate(preview)
       const element = preview.children[0]
 
+      sourceCode.innerHTML = highlightMarkup(sourceMarkupForModel(summaryModel, model, element))
       result = typeof viewer.refresh === 'function'
         ? await viewer.refresh(element, { runtime })
         : await renderWithViewer(viewer, runtime, element)
@@ -125,6 +138,79 @@ export function formatEvaluationError (error) {
   const message = error instanceof Error ? error.message : String(error)
 
   return `Evaluation failed: ${message}`
+}
+
+export function highlightMarkup (markup) {
+  return escapeHtml(formatMarkup(markup)).replace(
+    /(&lt;\/?)([a-z][\w-]*)([\s\S]*?)(&gt;)/gi,
+    (match, opening, tag, attributes, closing) => [
+      `<span class="source-token-tag">${opening}</span>`,
+      `<span class="source-token-name">${tag}</span>`,
+      highlightAttributes(attributes),
+      `<span class="source-token-tag">${closing}</span>`
+    ].join('')
+  )
+}
+
+export function formatMarkup (markup) {
+  const tokens = String(markup).trim().match(/<\/?[^>]+>|[^<]+/g) || []
+  const lines = []
+  let depth = 0
+
+  for (const token of tokens) {
+    const text = token.trim()
+
+    if (!text) {
+      continue
+    }
+
+    if (isClosingTag(text)) {
+      depth = Math.max(depth - 1, 0)
+    }
+
+    lines.push(`${'  '.repeat(depth)}${text}`)
+
+    if (isOpeningTag(text)) {
+      depth += 1
+    }
+  }
+
+  return lines.join('\n')
+}
+
+export function sourceMarkupForModel (summaryModel, model, element) {
+  const renderedMarkup = element && typeof element.innerHTML === 'string'
+    ? element.innerHTML.trim()
+    : ''
+
+  return summaryModel.format === 'Component' && renderedMarkup
+    ? renderedMarkup
+    : model.markup
+}
+
+function highlightAttributes (attributes) {
+  return attributes.replace(
+    /(\s+)([\w:-]+)(?:=(&quot;.*?&quot;|&#39;.*?&#39;|[^\s]+))?/g,
+    (match, spacing, name, value) => {
+      if (value === undefined) {
+        return `${spacing}<span class="source-token-attribute">${name}</span>`
+      }
+
+      return `${spacing}<span class="source-token-attribute">${name}</span>=<span class="source-token-value">${value}</span>`
+    }
+  )
+}
+
+function isClosingTag (text) {
+  return text.startsWith('</')
+}
+
+function isOpeningTag (text) {
+  return text.startsWith('<') && !text.startsWith('</') && !text.endsWith('/>')
+}
+
+function escapeHtml (value) {
+  return value.replace(/[&<>"']/g, (character) => HTML_ESCAPES[character])
 }
 
 export function markSelected (list, id) {

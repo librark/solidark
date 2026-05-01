@@ -9,8 +9,11 @@ import {
   formatEvaluationError,
   createOpenCascadeInitOptions,
   createShowcaseApp,
+  formatMarkup,
   formatModelDetails,
+  highlightMarkup,
   markSelected,
+  sourceMarkupForModel,
   showcaseKernelMode
 } from './main.js'
 
@@ -22,6 +25,8 @@ function createDocumentStub () {
     ['[data-level]', createElementStub('p')],
     ['[data-summary]', createElementStub('p')],
     ['[data-details]', createElementStub('pre')],
+    ['[data-source-code]', createElementStub('code')],
+    ['[data-source-path]', createElementStub('span')],
     ['[data-viewer]', createElementStub('sol-viewer')]
   ])
 
@@ -127,6 +132,8 @@ it('creates a showcase app and selects models', async () => {
   assert.equal(renders.length, 1)
   assert.equal(document.nodes.get('[data-title]').textContent, 'Parametric Bracket')
   assert.equal(document.nodes.get('[data-level]').textContent, 'Intermediate · HTML')
+  assert.equal(document.nodes.get('[data-source-path]').textContent, './examples/bracket.html')
+  assert.match(document.nodes.get('[data-source-code]').innerHTML, /source-token-name">sol-cuboid/)
   assert.match(document.nodes.get('[data-details]').textContent, /sol-cuboid: 3/)
 })
 
@@ -259,6 +266,43 @@ it('formats model details and marks selected buttons', () => {
       { 'sol-model': 1 }
     ),
     'Root: sol-model\nShapes: 0\nMeshes: 0\nImplicit union: no\nsol-model: 1'
+  )
+  assert.equal(
+    highlightMarkup('<sol-cuboid centered size="2 & 3"></sol-cuboid>'),
+    '<span class="source-token-tag">&lt;</span><span class="source-token-name">sol-cuboid</span> <span class="source-token-attribute">centered</span> <span class="source-token-attribute">size</span>=<span class="source-token-value">&quot;2 &amp; 3&quot;</span><span class="source-token-tag">&gt;</span>\n<span class="source-token-tag">&lt;/</span><span class="source-token-name">sol-cuboid</span><span class="source-token-tag">&gt;</span>'
+  )
+  assert.equal(
+    formatMarkup('  <sol-model><sol-translate by="1 0 0"><sol-cuboid></sol-cuboid></sol-translate><sol-sphere /></sol-model>  '),
+    '<sol-model>\n  <sol-translate by="1 0 0">\n    <sol-cuboid>\n    </sol-cuboid>\n  </sol-translate>\n  <sol-sphere />\n</sol-model>'
+  )
+  assert.equal(
+    formatMarkup('<sol-model>\n  \n<sol-cuboid></sol-cuboid>\n</sol-model>'),
+    '<sol-model>\n  <sol-cuboid>\n  </sol-cuboid>\n</sol-model>'
+  )
+  assert.equal(formatMarkup(''), '')
+  assert.equal(
+    sourceMarkupForModel(
+      { format: 'Component' },
+      { markup: '<showcase-enclosure></showcase-enclosure>' },
+      { innerHTML: ' <sol-model><sol-cuboid></sol-cuboid></sol-model> ' }
+    ),
+    '<sol-model><sol-cuboid></sol-cuboid></sol-model>'
+  )
+  assert.equal(
+    sourceMarkupForModel(
+      { format: 'HTML' },
+      { markup: '<sol-model></sol-model>' },
+      { innerHTML: '<sol-cuboid></sol-cuboid>' }
+    ),
+    '<sol-model></sol-model>'
+  )
+  assert.equal(
+    sourceMarkupForModel(
+      { format: 'Component' },
+      { markup: '<showcase-enclosure></showcase-enclosure>' },
+      null
+    ),
+    '<showcase-enclosure></showcase-enclosure>'
   )
 })
 

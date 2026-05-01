@@ -24,39 +24,21 @@
       <sol-model id="profile-operations" class="source-model" data-showcase-model>
         <sol-translate by="-42 0 0">
           <sol-extrude height="16">
-            <sol-sketch>
-              <sol-move point="-10 -7 0"></sol-move>
-              <sol-line point="10 -7 0"></sol-line>
-              <sol-line point="10 7 0"></sol-line>
-              <sol-line point="-10 7 0"></sol-line>
-              <sol-close></sol-close>
-            </sol-sketch>
+            <sol-rectangle size="20 14"></sol-rectangle>
           </sol-extrude>
         </sol-translate>
         <sol-revolve axis="0 1 0" angle="360">
-          <sol-sketch>
-            <sol-move point="10 -7 0"></sol-move>
-            <sol-line point="15 -7 0"></sol-line>
-            <sol-line point="15 7 0"></sol-line>
-            <sol-line point="10 7 0"></sol-line>
-            <sol-close></sol-close>
-          </sol-sketch>
+          <sol-polygon points="10 -7 0 15 -7 0 15 7 0 10 7 0" stride="3"></sol-polygon>
         </sol-revolve>
+        <sol-translate by="0 -24 0">
+          <sol-extrude height="6">
+            <sol-circle radius="6"></sol-circle>
+          </sol-extrude>
+        </sol-translate>
         <sol-translate by="42 0 0">
           <sol-sweep>
-            <sol-sketch>
-              <sol-move point="-4 -4 0"></sol-move>
-              <sol-line point="4 -4 0"></sol-line>
-              <sol-line point="4 4 0"></sol-line>
-              <sol-line point="-4 4 0"></sol-line>
-              <sol-close></sol-close>
-            </sol-sketch>
-            <sol-sketch>
-              <sol-move point="-18 0 0"></sol-move>
-              <sol-line point="-6 9 0"></sol-line>
-              <sol-line point="6 9 0"></sol-line>
-              <sol-line point="18 0 0"></sol-line>
-            </sol-sketch>
+            <sol-rectangle size="8 8"></sol-rectangle>
+            <sol-polyline points="-18 0 0 -6 9 0 6 9 0 18 0 0" stride="3"></sol-polyline>
           </sol-sweep>
         </sol-translate>
       </sol-model>

@@ -82,6 +82,7 @@ body {
   display: grid;
   grid-template-rows: auto minmax(260px, 1fr) auto;
   gap: 16px;
+  min-width: 0;
   padding: 24px;
 }
 
@@ -110,6 +111,14 @@ body {
   margin: 4px 0 0;
 }
 
+.model-stage {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 42%);
+  min-height: 0;
+  min-width: 0;
+}
+
 .viewer-surface {
   align-items: center;
   background:
@@ -128,6 +137,37 @@ body {
   padding: 0;
   text-align: center;
   white-space: pre-wrap;
+}
+
+.source-panel {
+  display: grid;
+  gap: 8px;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  min-width: 0;
+}
+
+.source-header {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.source-header h3 {
+  font-size: 14px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.source-header span {
+  color: #64748b;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .solidark-viewer-canvas {
@@ -179,6 +219,39 @@ body {
   margin: 0;
   overflow: auto;
   padding: 16px;
+}
+
+.model-source {
+  background: #111827;
+  border: 1px solid #263244;
+  border-radius: 8px;
+  color: #d1d5db;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 0;
+  max-height: min(64vh, 620px);
+  min-height: 360px;
+  overflow: auto;
+  padding: 16px;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.source-token-tag {
+  color: #7dd3fc;
+}
+
+.source-token-name {
+  color: #c4b5fd;
+}
+
+.source-token-attribute {
+  color: #fbbf24;
+}
+
+.source-token-value {
+  color: #86efac;
 }
 
 .standalone-shell {
@@ -234,5 +307,14 @@ body {
 
   .model-header {
     grid-template-columns: 1fr;
+  }
+
+  .model-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .model-source {
+    max-height: 42vh;
+    min-height: 260px;
   }
 }
