@@ -22,23 +22,25 @@
         <h1>Parametric Bracket</h1>
       </header>
       <sol-model id="bracket" class="source-model" data-showcase-model>
-        <sol-difference>
-          <sol-union>
-            <sol-cuboid size="90 18 12"></sol-cuboid>
+        <sol-color value="#6f92c9">
+          <sol-difference>
+            <sol-union>
+              <sol-cuboid size="90 18 12"></sol-cuboid>
+              <sol-translate by="-36 0 22">
+                <sol-cuboid size="18 18 44"></sol-cuboid>
+              </sol-translate>
+              <sol-translate by="36 0 22">
+                <sol-cuboid size="18 18 44"></sol-cuboid>
+              </sol-translate>
+            </sol-union>
             <sol-translate by="-36 0 22">
-              <sol-cuboid size="18 18 44"></sol-cuboid>
+              <sol-cylinder radius="5" height="28"></sol-cylinder>
             </sol-translate>
             <sol-translate by="36 0 22">
-              <sol-cuboid size="18 18 44"></sol-cuboid>
+              <sol-cylinder radius="5" height="28"></sol-cylinder>
             </sol-translate>
-          </sol-union>
-          <sol-translate by="-36 0 22">
-            <sol-cylinder radius="5" height="28"></sol-cylinder>
-          </sol-translate>
-          <sol-translate by="36 0 22">
-            <sol-cylinder radius="5" height="28"></sol-cylinder>
-          </sol-translate>
-        </sol-difference>
+          </sol-difference>
+        </sol-color>
       </sol-model>
       <sol-viewer class="viewer-surface" for="bracket"></sol-viewer>
     </main>

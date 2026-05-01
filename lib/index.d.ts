@@ -79,6 +79,12 @@ export type RenderableMesh = {
   tag: string;
   vertices: number[][];
   triangles: number[][];
+  styling?: ShapeStyling;
+  color?: unknown;
+};
+
+export type ShapeStyling = {
+  color?: unknown;
 };
 
 export type ProjectedTriangle = {
@@ -107,6 +113,7 @@ export type KernelShape = {
   tag?: string;
   properties: Record<string, unknown>;
   children: KernelShape[];
+  styling?: ShapeStyling;
   value?: unknown;
   handles?: unknown[];
   disposed: boolean;
@@ -151,6 +158,7 @@ export abstract class Kernel {
   abstract difference: KernelMethod;
   abstract intersection: KernelMethod;
   abstract group: KernelMethod;
+  abstract color: KernelMethod;
   abstract fillet: KernelMethod;
   abstract chamfer: KernelMethod;
   abstract shell: KernelMethod;
@@ -194,6 +202,7 @@ export class MemoryKernel extends Kernel {
   difference: KernelMethod;
   intersection: KernelMethod;
   group: KernelMethod;
+  color: KernelMethod;
   fillet: KernelMethod;
   chamfer: KernelMethod;
   shell: KernelMethod;
@@ -230,6 +239,7 @@ export const BrepComponent: typeof Component;
 export const ArcComponent: typeof Component;
 export const ChamferComponent: typeof Component;
 export const CircleComponent: typeof Component;
+export const ColorComponent: typeof Component;
 export const CloseComponent: typeof Component;
 export const ConeComponent: typeof Component;
 export const CuboidComponent: typeof Component;

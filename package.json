@@ -43,6 +43,8 @@
     "./runtime/runtime": "./lib/runtime/runtime.js",
     "./structures": "./lib/structures/index.js",
     "./structures/*": "./lib/structures/*/*.js",
+    "./styling": "./lib/styling/index.js",
+    "./styling/*": "./lib/styling/*/*.js",
     "./transform": "./lib/transform/index.js",
     "./transform/*": "./lib/transform/*/*.js",
     "./utils": "./lib/base/utils.js",

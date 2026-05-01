@@ -100,6 +100,21 @@ properties, and parameters. Component properties should be plain serializable
 values where possible, so a model can be inspected, cached, tested, regenerated,
 and shared.
 
+### Styling as Metadata
+
+Visual styling should be represented as serializable metadata attached to the
+model tree, not as geometric topology. A `color` attribute may be set on any
+geometry-producing component for concise one-off styling. A dedicated
+`<sol-color>` wrapper should also exist for applying the same styling to a
+subtree.
+
+The nearest inherited color should apply to descendants unless a child shape
+sets its own `color`. Direct component color therefore has precedence over a
+wrapping `<sol-color>`, and exported display formats such as GLB should convert
+the resolved styling metadata into materials. Kernel adapters may later map
+the same metadata into CAD document color systems such as STEP/XCAF, but color
+must not change boolean or B-Rep construction behavior.
+
 ### Testable by Design
 
 Testability is a core value proposition of Solidark. A model should feel natural
@@ -189,6 +204,7 @@ Built-in modeling concepts should be represented by custom elements:
 - `<sol-difference>`
 - `<sol-fillet>`
 - `<sol-sketch>`
+- `<sol-color>`
 
 Built-in Solidark modeling elements should use the `sol-` custom element prefix
 consistently.
@@ -198,7 +214,7 @@ consistently.
 ```html
 <sol-model id="mounting-plate">
   <sol-difference>
-    <sol-cuboid size="80 40 8"></sol-cuboid>
+    <sol-cuboid size="80 40 8" color="#ccd6e0"></sol-cuboid>
     <sol-cylinder radius="4" height="24"></sol-cylinder>
   </sol-difference>
 </sol-model>
@@ -433,6 +449,36 @@ multiple geometry-producing children, it should implicitly evaluate them as a
 union. Explicit `<sol-union>` may still be used inside a model for clarity or for
 localized boolean structure.
 
+## Styling Components
+
+Styling components apply rendering and export metadata to their child
+subtree. They should not create, delete, transform, or combine OpenCascade
+topology.
+
+Styling components must be transparent in the evaluated geometry tree: placing
+`<sol-color>` around a primitive, transform, operation, feature, sketch profile,
+or imported body should preserve the wrapped component's normal geometric role
+while applying styling metadata to the resulting shape descriptors.
+
+Initial styling component:
+
+- `<sol-color value="...">`
+
+Required color semantics:
+
+- Any geometry-producing element may set `color="..."` directly.
+- `<sol-color value="...">` and `<sol-color color="...">` apply color to all
+  descendant shapes that do not set their own direct `color`.
+- Direct `color` on a child takes precedence over inherited color from the
+  nearest `<sol-color>` ancestor.
+- Colors should be accepted as hexadecimal strings such as `#336699`, named
+  CSS colors where supported by the library, numeric arrays, or RGB/RGBA strings.
+- Color should be carried on evaluated shape descriptors as styling metadata.
+- Mesh and GLB exporters should convert resolved color metadata into material
+  color.
+- Boolean, transform, and B-Rep operations should pass styling metadata along
+  without treating it as geometric input.
+
 ## Attributes and Properties
 
 Solidark components should be usable from both HTML markup and plain JavaScript.
@@ -629,12 +675,12 @@ Assembly elements should preserve:
 
 - Part names.
 - Instance placement.
-- Color and appearance.
+- Color and styling.
 - Material metadata.
 - User-defined metadata.
 - Export-specific metadata where supported.
 
-Appearance should not change geometric identity unless explicitly configured to
+Styling should not change geometric identity unless explicitly configured to
 participate in caching keys.
 
 ## Kernel Adapter

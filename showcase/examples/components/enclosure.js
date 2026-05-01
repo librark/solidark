@@ -23,7 +23,9 @@ export class ShowcaseEnclosureComponent extends Component {
                 <sol-cylinder radius="6" height="24"></sol-cylinder>
               </sol-translate>
             </sol-union>
-            <sol-cuboid size="108 58 20"></sol-cuboid>
+            <sol-translate by="0 0 -4">
+              <sol-cuboid size="108 58 20"></sol-cuboid>
+            </sol-translate>
           </sol-difference>
         </sol-chamfer>
       </sol-model>
