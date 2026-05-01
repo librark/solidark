@@ -102,6 +102,11 @@ export type ViewerTarget = {
   ownerDocument?: Document;
 };
 
+export type ViewerOptions = {
+  three?: unknown;
+  renderer?: unknown;
+};
+
 export type GlbObjectUrl = {
   blob: Blob;
   url: string;
@@ -329,9 +334,15 @@ export function loadGlobalKernel(options?: {
 }): unknown;
 export function useInMemoryKernel(options?: { target?: Record<string, unknown> }): MemoryKernel;
 export function evaluateNode(node: NormalizedNode, kernel?: Kernel): KernelShape[];
-export function createViewer(target?: ViewerTarget | null): Viewer;
+export function createViewer(target?: ViewerTarget | null, options?: ViewerOptions): Viewer;
 export function createSceneSvg(shapes?: KernelShape[]): string;
 export function collectPrimitiveEntries(shapes: KernelShape[]): KernelShape[];
+export function canUseThreeTarget(target?: ViewerTarget | null, options?: ViewerOptions): boolean;
+export function createThreeCadScene(
+  target: ViewerTarget,
+  meshes?: RenderableMesh[],
+  options?: ViewerOptions
+): ThreeCadRenderer;
 export function createModelViewerScene(
   target: ViewerTarget,
   meshes?: RenderableMesh[],
@@ -342,10 +353,42 @@ export function createMeshSceneSvg(meshes?: RenderableMesh[]): string;
 export function collectMeshTriangles(meshes?: RenderableMesh[]): ProjectedTriangle[];
 
 export class Viewer {
-  constructor(target?: ViewerTarget | null);
+  readonly target: ViewerTarget | null;
+  readonly options: ViewerOptions;
+  result: EvaluationResult | { shapes?: KernelShape[]; meshes?: RenderableMesh[] } | null;
+  renderer: { dispose(): unknown } | null;
+  constructor(target?: ViewerTarget | null, options?: ViewerOptions);
   render(result: EvaluationResult | { shapes?: KernelShape[]; meshes?: RenderableMesh[] }): this;
   clear(): this;
   disposeRenderer(): this;
+}
+
+export class ThreeCadRenderer {
+  readonly target: ViewerTarget;
+  readonly meshes: RenderableMesh[];
+  readonly three: unknown;
+  readonly root: HTMLElement;
+  readonly toolbar: HTMLElement;
+  readonly viewport: HTMLElement;
+  readonly renderer: unknown;
+  constructor(target: ViewerTarget, meshes?: RenderableMesh[], options?: ViewerOptions);
+  createToolbar(): void;
+  createScene(): void;
+  createMeshEntry(mesh: RenderableMesh, index: number): unknown;
+  attach(): this;
+  dispose(): this;
+  view(name: "front" | "isometric" | "right" | "top"): this;
+  fit(): this;
+  toggleCamera(): this;
+  toggleXray(): this;
+  startDrag(event: PointerEvent): this;
+  dragView(event: PointerEvent): this;
+  pan(dx: number, dy: number): void;
+  stopDrag(): this;
+  zoomBy(event: WheelEvent): this;
+  resize(): void;
+  render(): this;
+  positionCamera(): void;
 }
 
 export class ModelViewerRenderer {
