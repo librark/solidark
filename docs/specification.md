@@ -894,30 +894,74 @@ Kernels may expose `toMesh(shape, options)` so the runtime can include
 is not required to generate meshes, which keeps unit tests deterministic and
 fast unless a test explicitly targets visualization output.
 
-## Browser Visualization
+## CAD Viewer
 
 Solidark should provide a direct way to visualize model changes in the browser.
-This does not make Solidark a full CAD application, but it should give
-developers immediate feedback while editing components and tests.
+This does not make Solidark a graphical CAD editor: geometry definition and
+editing should still happen in HTML, JavaScript components, tests, and source
+files. The viewer should be a visualization, inspection, and development
+feedback tool.
 
-Visualization requirements:
+The primary Solidark viewer should feel closer to a CAD viewport than to a
+product model embed. A generic GLB viewer such as `<model-viewer>` is useful as
+a low-effort fallback and web-publishing target, but it should not be the
+long-term primary viewer because it does not naturally expose CAD affordances
+such as edge display, section planes, precise camera presets, selection, or
+component inspection.
 
-- Provide a minimal browser viewer or viewer adapter that can display evaluated
-  shapes.
-- Keep built-in `sol-*` elements focused on model definition and evaluation;
-  visualization should live in an optional viewer package or adapter.
-- Reuse or wrap the visualization approach already used by OpenCascade.js where
-  practical.
-- Fall back to Solidark-generated triangulated meshes when a lower-level viewer
-  integration is more appropriate.
+Solidark should therefore provide a native Three.js-backed viewer adapter as
+the preferred browser visualization path. It should consume `EvaluationResult`
+objects and render `result.meshes` directly where possible, avoiding an
+unnecessary GLB round trip during development. GLB export should remain
+available for interchange, snapshots, and fallback display through
+`<model-viewer>`.
+
+CascadeStudio is a useful reference for the desired browser CAD feel because it
+combines OpenCascade.js with Three.js in a live scripted CAD environment.
+Solidark should use CascadeStudio as inspiration for viewport behavior, but
+should not depend on CascadeStudio as a library. CascadeStudio is a full CAD IDE
+with editor, layout, GUI, import/export, and project-management concerns;
+Solidark should keep those responsibilities out of the core viewer.
+
+Viewer requirements:
+
+- Provide `<sol-viewer>` as an optional Web Component that references a
+  Solidark model element, evaluates it, and visualizes the resulting geometry.
+- Keep built-in modeling elements focused on model definition and evaluation;
+  visualization should live in `solidark/viewer` or `solidark/external`.
+- Keep the viewer optional for production modeling code so headless tests and
+  server-side evaluation do not load browser rendering dependencies.
+- Prefer a Three.js CAD viewport for interactive browser inspection.
+- Keep `<model-viewer>` available as a fallback renderer for GLB previews,
+  publishing, and environments where the CAD viewer is not loaded.
 - Support refreshing the display after a component property, attribute, or DOM
   subtree changes.
+- Expose a small programmatic API suitable for development tools and tests, for
+  example `viewer.render(result)`, `viewer.refresh(element)`, `viewer.clear()`,
+  and a `ready` promise that resolves only after evaluation and rendering have
+  completed.
 - Preserve component-to-geometry mapping where practical so changed or selected
   components can be highlighted.
-- Expose a small API suitable for development tools and tests, for example
-  `viewer.render(result)`.
-- Keep browser visualization optional for production modeling code so headless
-  tests and server-side evaluation do not load viewer dependencies.
+
+Initial CAD viewport capabilities:
+
+- Orbit, pan, zoom, and fit-to-model controls.
+- Orthographic and perspective camera modes.
+- Named view presets such as top, front, right, and isometric.
+- Axes, grid, and optional view cube or orientation widget.
+- Shaded faces with configurable material color from Solidark styling metadata.
+- Edge outlines over shaded faces, including silhouette edges where practical.
+- Transparent or X-ray display mode.
+- Section or clipping planes for inspecting interiors.
+- Per-component or per-shape hover and selection highlighting.
+- Bounds display and camera framing based on evaluated model extents.
+- Empty, loading, and diagnostic states that are visible in the viewer surface.
+
+The first implementation may start with a smaller Three.js renderer, but its
+architecture should leave room for the capabilities above. Viewer code should
+not mutate model geometry and should not become a graphical editor. Selection
+and inspection may report component metadata, but editing actions should remain
+source-code-driven.
 
 ## Import and Export
 
@@ -1074,7 +1118,10 @@ The first useful release should include:
 - `<sol-extrude>` and `<sol-revolve>`.
 - `<sol-fillet>` and `<sol-chamfer>`.
 - Triangulation for display.
-- Minimal browser visualization adapter for inspecting evaluated model changes.
+- `<sol-viewer>` with a minimal Three.js-backed CAD viewport for inspecting
+  evaluated model changes.
+- GLB and `<model-viewer>` fallback visualization for simple previews and web
+  publishing.
 - STEP and STL export.
 - Clear diagnostics.
 - JSDoc annotations and TypeScript declaration files.
@@ -1085,7 +1132,8 @@ Features that can wait:
 - Full assembly metadata export.
 - Advanced selectors.
 - Loft and sweep if they complicate the first kernel adapter.
-- Full browser viewer components beyond the minimal visualization adapter.
+- Advanced viewer features such as section planes, view cube, detailed part
+  tree, and topology-level inspection.
 - Custom OpenCascade.js build tooling.
 
 Out of scope unless this specification later changes:
