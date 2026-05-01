@@ -12,16 +12,18 @@ export class ShowcaseLoftedHandleComponent extends Component {
               <sol-sketch>
                 <sol-move point="-28 -8"></sol-move>
                 <sol-line point="28 -8"></sol-line>
-                <sol-line point="28 8"></sol-line>
+                <sol-arc through="36 0" point="28 8"></sol-arc>
                 <sol-line point="-28 8"></sol-line>
+                <sol-arc through="-36 0" point="-28 -8"></sol-arc>
                 <sol-close></sol-close>
               </sol-sketch>
               <sol-translate by="0 0 34">
                 <sol-sketch>
                   <sol-move point="-18 -6"></sol-move>
                   <sol-line point="18 -6"></sol-line>
-                  <sol-line point="18 6"></sol-line>
+                  <sol-arc through="24 0" point="18 6"></sol-arc>
                   <sol-line point="-18 6"></sol-line>
+                  <sol-arc through="-24 0" point="-18 -6"></sol-arc>
                   <sol-close></sol-close>
                 </sol-sketch>
               </sol-translate>

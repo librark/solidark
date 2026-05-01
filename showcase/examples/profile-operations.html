@@ -32,13 +32,17 @@
         </sol-revolve>
         <sol-translate by="0 -24 0">
           <sol-extrude height="6">
-            <sol-circle radius="6"></sol-circle>
+            <sol-ellipse radius-x="10" radius-y="5"></sol-ellipse>
           </sol-extrude>
         </sol-translate>
         <sol-translate by="42 0 0">
           <sol-sweep>
             <sol-rectangle size="8 8"></sol-rectangle>
-            <sol-polyline points="-18 0 0 -6 9 0 6 9 0 18 0 0" stride="3"></sol-polyline>
+            <sol-sketch>
+              <sol-move point="-18 0 0"></sol-move>
+              <sol-arc through="-9 10 0" point="0 12 0"></sol-arc>
+              <sol-arc through="9 10 0" point="18 0 0"></sol-arc>
+            </sol-sketch>
           </sol-sweep>
         </sol-translate>
       </sol-model>

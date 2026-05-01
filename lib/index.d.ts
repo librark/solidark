@@ -136,6 +136,7 @@ export abstract class Kernel {
   abstract cone: KernelMethod;
   abstract torus: KernelMethod;
   abstract circle: KernelMethod;
+  abstract ellipse: KernelMethod;
   abstract rectangle: KernelMethod;
   abstract polygon: KernelMethod;
   abstract polyline: KernelMethod;
@@ -163,6 +164,7 @@ export abstract class Kernel {
   abstract sketch: KernelMethod;
   abstract move: KernelMethod;
   abstract line: KernelMethod;
+  abstract arc: KernelMethod;
   abstract close: KernelMethod;
   abstract step: KernelMethod;
   abstract stl: KernelMethod;
@@ -177,6 +179,7 @@ export class MemoryKernel extends Kernel {
   cone: KernelMethod;
   torus: KernelMethod;
   circle: KernelMethod;
+  ellipse: KernelMethod;
   rectangle: KernelMethod;
   polygon: KernelMethod;
   polyline: KernelMethod;
@@ -204,6 +207,7 @@ export class MemoryKernel extends Kernel {
   sketch: KernelMethod;
   move: KernelMethod;
   line: KernelMethod;
+  arc: KernelMethod;
   close: KernelMethod;
   step: KernelMethod;
   stl: KernelMethod;
@@ -223,6 +227,7 @@ export class SolidarkEvaluationError extends Error {
 }
 
 export const BrepComponent: typeof Component;
+export const ArcComponent: typeof Component;
 export const ChamferComponent: typeof Component;
 export const CircleComponent: typeof Component;
 export const CloseComponent: typeof Component;
@@ -230,6 +235,7 @@ export const ConeComponent: typeof Component;
 export const CuboidComponent: typeof Component;
 export const CylinderComponent: typeof Component;
 export const DifferenceComponent: typeof Component;
+export const EllipseComponent: typeof Component;
 export const ExtrudeComponent: typeof Component;
 export const FaceComponent: typeof Component;
 export const FilletComponent: typeof Component;
