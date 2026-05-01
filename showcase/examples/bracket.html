@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Parametric Bracket</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js"
+        }
+      }
+    </script>
+    <script type="module" src="/node_modules/@google/model-viewer/dist/model-viewer.min.js"></script>
+  </head>
+  <body>
+    <main class="standalone-shell">
+      <header class="standalone-header">
+        <a href="../">Showcase</a>
+        <p>Intermediate declarative HTML</p>
+        <h1>Parametric Bracket</h1>
+      </header>
+      <sol-model id="bracket" class="source-model" data-showcase-model>
+        <sol-difference>
+          <sol-union>
+            <sol-cuboid size="90 18 12"></sol-cuboid>
+            <sol-translate by="-36 0 22">
+              <sol-cuboid size="18 18 44"></sol-cuboid>
+            </sol-translate>
+            <sol-translate by="36 0 22">
+              <sol-cuboid size="18 18 44"></sol-cuboid>
+            </sol-translate>
+          </sol-union>
+          <sol-translate by="-36 0 22">
+            <sol-cylinder radius="5" height="28"></sol-cylinder>
+          </sol-translate>
+          <sol-translate by="36 0 22">
+            <sol-cylinder radius="5" height="28"></sol-cylinder>
+          </sol-translate>
+        </sol-difference>
+      </sol-model>
+      <sol-viewer class="viewer-surface" for="bracket"></sol-viewer>
+    </main>
+    <script type="module" src="../standalone.js"></script>
+  </body>
+</html>

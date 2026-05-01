@@ -63,10 +63,25 @@ function createElementStub (tag) {
 }
 
 function createModelElementStub (markup) {
-  return {
+  const element = {
     markup,
     localName: 'sol-model',
     children: []
+  }
+
+  if (markup.includes('updated-preview')) {
+    element.updated = Promise.resolve(element)
+  }
+
+  return element
+}
+
+function createModelLoader (markups = {}) {
+  return async function modelLoader (id) {
+    return {
+      id,
+      markup: markups[id] || '<sol-model><sol-cuboid></sol-cuboid></sol-model>'
+    }
   }
 }
 
@@ -76,6 +91,9 @@ it('creates a showcase app and selects models', async () => {
   const renders = []
   const app = createShowcaseApp({
     document,
+    modelLoader: createModelLoader({
+      bracket: '<sol-model><sol-cuboid></sol-cuboid><sol-cuboid></sol-cuboid><sol-cuboid></sol-cuboid><sol-cylinder></sol-cylinder><sol-cylinder></sol-cylinder></sol-model>'
+    }),
     runtime: {
       async evaluate (element) {
         evaluations.push(element.markup)
@@ -108,6 +126,7 @@ it('creates a showcase app and selects models', async () => {
   assert.equal(evaluations.length, 1)
   assert.equal(renders.length, 1)
   assert.equal(document.nodes.get('[data-title]').textContent, 'Parametric Bracket')
+  assert.equal(document.nodes.get('[data-level]').textContent, 'Intermediate · HTML')
   assert.match(document.nodes.get('[data-details]').textContent, /sol-cuboid: 3/)
 })
 
@@ -130,6 +149,9 @@ it('uses sol-viewer refresh when the showcase viewer target provides it', async 
   }
   const app = createShowcaseApp({
     document,
+    modelLoader: createModelLoader({
+      primitives: '<sol-model class="updated-preview"><sol-cuboid></sol-cuboid></sol-model>'
+    }),
     runtime,
     viewerFactory () {
       throw new Error('viewer factory should not be used')
@@ -148,6 +170,7 @@ it('reports showcase evaluation errors', async () => {
   let clears = 0
   const app = createShowcaseApp({
     document,
+    modelLoader: createModelLoader(),
     runtime: {
       async evaluate () {
         throw error
@@ -182,6 +205,7 @@ it('reports sol-viewer refresh errors when no clear method is present', async ()
   }
   const app = createShowcaseApp({
     document,
+    modelLoader: createModelLoader(),
     runtime: {},
     viewerFactory () {
       throw new Error('viewer factory should not be used')
@@ -195,19 +219,25 @@ it('reports sol-viewer refresh errors when no clear method is present', async ()
 it('createModelButton event handlers select models', () => {
   const document = { createElement: createElementStub }
   let selected = ''
-  const button = createModelButton(document, {
+  const entry = createModelButton(document, {
     id: 'primitives',
     title: 'Primitive Set',
-    level: 'Basic'
+    level: 'Basic',
+    format: 'HTML',
+    source: './examples/primitives.html'
   }, (id) => {
     selected = id
   })
+  const [button, link] = entry.children
 
   button.listeners.click()
 
+  assert.equal(entry.dataset.modelId, 'primitives')
   assert.equal(button.type, 'button')
   assert.equal(button.dataset.modelId, 'primitives')
   assert.equal(button.innerHTML.includes('Primitive Set'), true)
+  assert.equal(link.href, './examples/primitives.html')
+  assert.equal(link.textContent, 'Open standalone')
   assert.equal(selected, 'primitives')
 })
 
@@ -266,7 +296,7 @@ it('configures showcase kernel loading modes', async () => {
 it('boots the showcase with default runtime wiring', async () => {
   useInMemoryKernel()
   const document = createDocumentStub()
-  const app = await bootShowcase(document, { mode: 'memory' })
+  const app = await bootShowcase(document, { mode: 'memory', modelLoader: createModelLoader() })
 
   assert.equal(app.models[0].id, 'primitives')
   assert.equal(document.nodes.get('[data-title]').textContent, 'Primitive Set')

@@ -1,15 +1,18 @@
 import {
   SolidarkRuntime,
-  clearGlobalKernel,
-  createOpenCascadeKernel,
   createViewer,
-  defineSolidarkElements,
-  useInMemoryKernel
+  defineSolidarkElements
 } from '../lib/index.js'
-import { countModelTags, getShowcaseModel, listShowcaseSummaries } from './models.js'
+import './examples/components/enclosure.js'
+import './examples/components/lofted-handle.js'
+import { configureShowcaseKernel } from './kernel.js'
+import { countModelTags, getShowcaseModel, listShowcaseSummaries, loadShowcaseModel } from './models.js'
+
+export { configureShowcaseKernel, createOpenCascadeInitOptions, showcaseKernelMode } from './kernel.js'
 
 export function createShowcaseApp ({
   document,
+  modelLoader = loadShowcaseModel,
   runtime = SolidarkRuntime,
   viewerFactory = createViewer
 }) {
@@ -25,23 +28,26 @@ export function createShowcaseApp ({
     : viewerFactory(viewerTarget)
 
   async function selectModel (id) {
-    const model = getShowcaseModel(id)
+    const summaryModel = getShowcaseModel(id)
 
-    title.textContent = model.title
-    level.textContent = model.level
-    summary.textContent = model.summary
-    preview.innerHTML = model.markup
+    title.textContent = summaryModel.title
+    level.textContent = `${summaryModel.level} · ${summaryModel.format}`
+    summary.textContent = summaryModel.summary
     details.textContent = 'Evaluating model...'
 
-    const element = preview.children[0]
     let result
 
     try {
+      const model = await modelLoader(id)
+      preview.innerHTML = model.markup
+      await waitForPreviewUpdate(preview)
+      const element = preview.children[0]
+
       result = typeof viewer.refresh === 'function'
         ? await viewer.refresh(element, { runtime })
         : await renderWithViewer(viewer, runtime, element)
       details.textContent = formatModelDetails(result, countModelTags(model.markup))
-      markSelected(list, model.id)
+      markSelected(list, summaryModel.id)
     } catch (error) {
       clearViewer(viewer)
       details.textContent = formatEvaluationError(error)
@@ -74,22 +80,40 @@ function clearViewer (viewer) {
 }
 
 export function createModelButton (document, model, selectModel) {
+  const entry = document.createElement('div')
   const button = document.createElement('button')
+  const link = document.createElement('a')
+
+  entry.className = 'model-entry'
+  entry.dataset.modelId = model.id
   button.type = 'button'
   button.dataset.modelId = model.id
   button.innerHTML = `
     <span>${model.title}</span>
-    <small>${model.level}</small>
+    <small>${model.level} · ${model.format}</small>
   `
+  link.href = model.source
+  link.target = '_blank'
+  link.rel = 'noreferrer'
+  link.textContent = 'Open standalone'
   button.addEventListener('click', () => selectModel(model.id))
-  return button
+  entry.replaceChildren(button, link)
+  return entry
+}
+
+async function waitForPreviewUpdate (preview) {
+  for (const child of preview.children) {
+    if (child.updated && typeof child.updated.then === 'function') {
+      await child.updated
+    }
+  }
 }
 
 export function formatModelDetails (result, tagCounts) {
   const lines = [
     `Root: ${result.model.tag}`,
     `Shapes: ${result.shapes.length}`,
-    `Meshes: ${result.meshes?.length || 0}`,
+    `Meshes: ${result.meshes.length}`,
     `Implicit union: ${result.model.implicitUnion ? 'yes' : 'no'}`
   ]
 
@@ -112,56 +136,12 @@ export function markSelected (list, id) {
   }
 }
 
-export function showcaseKernelMode (location = globalThis.location) {
-  if (!location) {
-    return 'memory'
-  }
-
-  const search = typeof location === 'string'
-    ? new URL(location, 'http://localhost').search
-    : location.search
-  const mode = new URLSearchParams(search).get('kernel')
-
-  return mode === 'memory' ? 'memory' : 'opencascade'
-}
-
-export function createOpenCascadeInitOptions ({
-  wasmPath = '/node_modules/opencascade.js/dist/opencascade.wasm.wasm'
-} = {}) {
-  return {
-    locateFile (path) {
-      return path.endsWith('.wasm') ? wasmPath : path
-    }
-  }
-}
-
-export function configureShowcaseKernel ({
-  kernelFactory = createOpenCascadeKernel,
-  location = globalThis.location,
-  mode = showcaseKernelMode(location),
-  runtime = SolidarkRuntime,
-  wasmPath
-} = {}) {
-  if (mode === 'memory') {
-    runtime.configure({ kernel: useInMemoryKernel() })
-    return 'memory'
-  }
-
-  clearGlobalKernel()
-  runtime.configure({
-    loader: () => kernelFactory({
-      initOptions: createOpenCascadeInitOptions({ wasmPath })
-    })
-  })
-  return 'opencascade'
-}
-
 export async function bootShowcase (document = globalThis.document, options = {}) {
   const runtime = options.runtime || SolidarkRuntime
 
   defineSolidarkElements()
   configureShowcaseKernel({ ...options, runtime })
-  const app = createShowcaseApp({ document, runtime })
+  const app = createShowcaseApp({ document, modelLoader: options.modelLoader, runtime })
   await app.selectModel('primitives')
   return app
 }

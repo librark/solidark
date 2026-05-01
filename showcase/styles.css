@@ -37,7 +37,12 @@ body {
   gap: 8px;
 }
 
-.model-list button {
+.model-entry {
+  display: grid;
+  gap: 4px;
+}
+
+.model-entry button {
   appearance: none;
   background: #243241;
   border: 1px solid #354759;
@@ -50,7 +55,7 @@ body {
   text-align: left;
 }
 
-.model-list button[aria-current] {
+.model-entry[aria-current] button {
   background: #0f766e;
   border-color: #14b8a6;
 }
@@ -61,6 +66,16 @@ body {
 
 .model-list small {
   color: #c8d3dd;
+}
+
+.model-list a {
+  color: #9bd8d0;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.model-list a:hover {
+  text-decoration: underline;
 }
 
 .workbench {
@@ -164,6 +179,44 @@ body {
   margin: 0;
   overflow: auto;
   padding: 16px;
+}
+
+.standalone-shell {
+  display: grid;
+  gap: 18px;
+  margin: 0 auto;
+  max-width: 1180px;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.standalone-header {
+  display: grid;
+  gap: 4px;
+}
+
+.standalone-header a {
+  color: #0f766e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.standalone-header p {
+  color: #0f766e;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.standalone-header h1 {
+  font-size: 32px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.source-model {
+  display: none;
 }
 
 @media (max-width: 780px) {

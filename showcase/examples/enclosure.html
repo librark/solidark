@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Electronics Enclosure</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js"
+        }
+      }
+    </script>
+    <script type="module" src="/node_modules/@google/model-viewer/dist/model-viewer.min.js"></script>
+  </head>
+  <body>
+    <main class="standalone-shell">
+      <header class="standalone-header">
+        <a href="../">Showcase</a>
+        <p>Advanced component-rendered model</p>
+        <h1>Electronics Enclosure</h1>
+      </header>
+      <showcase-enclosure id="electronics-enclosure" class="source-model" data-showcase-model></showcase-enclosure>
+      <sol-viewer class="viewer-surface" for="electronics-enclosure"></sol-viewer>
+    </main>
+    <script type="module" src="./components/enclosure.js"></script>
+    <script type="module" src="../standalone.js"></script>
+  </body>
+</html>

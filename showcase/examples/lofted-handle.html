@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Lofted Handle Concept</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js"
+        }
+      }
+    </script>
+    <script type="module" src="/node_modules/@google/model-viewer/dist/model-viewer.min.js"></script>
+  </head>
+  <body>
+    <main class="standalone-shell">
+      <header class="standalone-header">
+        <a href="../">Showcase</a>
+        <p>Advanced component-rendered model</p>
+        <h1>Lofted Handle Concept</h1>
+      </header>
+      <showcase-lofted-handle id="lofted-handle" class="source-model" data-showcase-model></showcase-lofted-handle>
+      <sol-viewer class="viewer-surface" for="lofted-handle"></sol-viewer>
+    </main>
+    <script type="module" src="./components/lofted-handle.js"></script>
+    <script type="module" src="../standalone.js"></script>
+  </body>
+</html>
