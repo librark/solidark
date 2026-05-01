@@ -949,6 +949,14 @@ Initial CAD viewport capabilities:
 - Orthographic and perspective camera modes.
 - Named view presets such as top, front, right, and isometric.
 - Axes, grid, and optional view cube or orientation widget.
+- Axis labels should remain visible and interactive; clicking an axis label
+  should toggle the rendered axis lines without changing the model.
+- Grid display should be configurable from `<sol-viewer>`. The grid should be
+  visible by default, represent a 10 mm by 10 mm working area by default, support a
+  `grid="false"` attribute to hide it initially, and support `grid-size` for
+  choosing its minimum width and height in millimeters. If the evaluated model
+  footprint exceeds the configured grid size, the rendered grid should expand
+  and center under the model so the full XY footprint remains covered.
 - Shaded faces with configurable material color from Solidark styling metadata.
 - Edge outlines over shaded faces, including silhouette edges where practical.
 - Transparent or X-ray display mode.

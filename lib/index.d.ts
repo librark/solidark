@@ -103,6 +103,8 @@ export type ViewerTarget = {
 };
 
 export type ViewerOptions = {
+  gridSize?: number;
+  gridVisible?: boolean;
   three?: unknown;
   renderer?: unknown;
 };

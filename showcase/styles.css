@@ -233,6 +233,49 @@ body {
   min-width: 0;
 }
 
+.solidark-cad-axis-legend {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #d4dde6;
+  border-radius: 6px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  position: absolute;
+  right: 12px;
+}
+
+.solidark-cad-axis-legend.is-disabled {
+  opacity: 0.58;
+}
+
+.solidark-cad-axis-label {
+  align-items: center;
+  color: var(--solidark-axis-color);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 4px;
+  line-height: 1;
+}
+
+.solidark-cad-axis-label:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 3px;
+}
+
+.solidark-cad-axis-label::before {
+  background: var(--solidark-axis-color);
+  border-radius: 999px;
+  content: "";
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
 .solidark-cad-canvas {
   cursor: grab;
   display: block;
