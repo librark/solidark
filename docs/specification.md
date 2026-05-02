@@ -602,12 +602,18 @@ Initial B-Rep features:
 - `<sol-section plane="...">`
 - `<sol-face>`
 
-The first implementation may use explicit edge indexes for fillet and chamfer
-selection. When `edges`, `edge`, or `select` is omitted, or set to `all`, every
-edge of the child shape should be used. Setting the selector to `none` should
-leave the shape unchanged. Feature construction should be best-effort by
-default so examples remain inspectable across OpenCascade.js builds; setting
-`strict` should surface the underlying kernel error.
+The first implementation may use explicit topology indexes for feature
+selection. Fillet and chamfer should read `edges`, `edge`, or `select`; shell
+should read `faces`, `open-faces`, or `remove`. When an edge selector is
+omitted, or set to `all`, every edge of the child shape should be used. Setting
+an edge selector to `none` should leave the shape unchanged. When a shell face
+selector is omitted, `false`, or `none`, the shell should remain closed; setting
+it to `all` should remove every face. Indexed selectors should support single
+indexes, negative indexes from the end, whitespace/comma/semicolon-separated
+lists, ranges such as `0..3` or `3-1`, and stable aliases such as `first` and
+`last`. Feature construction should be best-effort by default so examples
+remain inspectable across OpenCascade.js builds; setting `strict` should surface
+the underlying kernel error.
 
 Feature selection should support ergonomic selectors before exposing raw
 OpenCascade topology:
