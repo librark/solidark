@@ -25,20 +25,20 @@
         <sol-group>
           <sol-color value="#4f7cac">
             <sol-translate by="-42 0 0">
-              <sol-fillet radius="2.5" edges="first last">
-                <sol-cuboid size="24 24 18"></sol-cuboid>
+              <sol-fillet radius="2.5" edges="rounded">
+                <sol-cuboid size="24 24 18" topology="rounded:edge:first,last"></sol-cuboid>
               </sol-fillet>
             </sol-translate>
           </sol-color>
           <sol-color value="#d28f2d">
-            <sol-chamfer distance="2" edges="0..3">
-              <sol-cuboid size="24 24 18"></sol-cuboid>
+            <sol-chamfer distance="2" edges="base">
+              <sol-cuboid size="24 24 18" topology="base:edge:0..3"></sol-cuboid>
             </sol-chamfer>
           </sol-color>
           <sol-color value="#2f9f7b">
             <sol-translate by="42 0 0">
-              <sol-shell thickness="2" faces="last">
-                <sol-cuboid size="24 24 18"></sol-cuboid>
+              <sol-shell thickness="2" faces="lid">
+                <sol-cuboid size="24 24 18" topology="lid:face:last"></sol-cuboid>
               </sol-shell>
             </sol-translate>
           </sol-color>

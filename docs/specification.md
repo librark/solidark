@@ -618,7 +618,14 @@ the underlying kernel error.
 Feature selection should support ergonomic selectors before exposing raw
 OpenCascade topology:
 
-- Select by named feature id.
+- Select by named topology selector. A source component may declare names with a
+  `topology` attribute such as `topology="rounded:edge:0..3 lid:face:last"`,
+  and feature components may later use those names as selectors, such as
+  `<sol-fillet edges="rounded">` or `<sol-shell faces="lid">`. The first
+  implementation may preserve these names only across single-child transforms
+  and styling wrappers; boolean operations may rebuild topology and should not
+  promise stable name preservation until explicit topological naming support is
+  implemented in the kernel adapter.
 - Select by tag.
 - Select by geometric predicate.
 - Select by explicit low-level topology handle as an advanced escape hatch.

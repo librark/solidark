@@ -87,9 +87,24 @@ export type ShapeStyling = {
   color?: unknown;
 };
 
+export type TopologyNames = {
+  edges: Record<string, unknown>;
+  faces: Record<string, unknown>;
+};
+
+export function parseTopologyNames(
+  value: string | Record<string, unknown> | null | undefined
+): TopologyNames | null;
+
 export function parseTopologySelector(
   selection: string | number | unknown[],
   count: number
+): Set<number>;
+
+export function resolveTopologySelector(
+  selection: string | number | unknown[],
+  count: number,
+  namedSelectors?: Record<string, unknown>
 ): Set<number>;
 
 export type ProjectedTriangle = {
@@ -148,6 +163,7 @@ export type KernelShape = {
   properties: Record<string, unknown>;
   children: KernelShape[];
   styling?: ShapeStyling;
+  topology?: TopologyNames;
   value?: unknown;
   handles?: unknown[];
   disposed: boolean;

@@ -89,14 +89,14 @@ it('loads the topology feature showcase markup', async () => {
         <html>
           <body>
             <sol-model id="topology-features" data-showcase-model>
-              <sol-fillet radius="2.5" edges="first last">
-                <sol-cuboid></sol-cuboid>
+              <sol-fillet radius="2.5" edges="rounded">
+                <sol-cuboid topology="rounded:edge:first,last"></sol-cuboid>
               </sol-fillet>
-              <sol-chamfer distance="2" edges="0..3">
-                <sol-cuboid></sol-cuboid>
+              <sol-chamfer distance="2" edges="base">
+                <sol-cuboid topology="base:edge:0..3"></sol-cuboid>
               </sol-chamfer>
-              <sol-shell thickness="2" faces="last">
-                <sol-cuboid></sol-cuboid>
+              <sol-shell thickness="2" faces="lid">
+                <sol-cuboid topology="lid:face:last"></sol-cuboid>
               </sol-shell>
             </sol-model>
           </body>
@@ -107,9 +107,10 @@ it('loads the topology feature showcase markup', async () => {
   const counts = countModelTags(model.markup)
 
   assert.equal(model.title, 'Topology Features')
-  assert.equal(model.markup.includes('edges="first last"'), true)
-  assert.equal(model.markup.includes('edges="0..3"'), true)
-  assert.equal(model.markup.includes('faces="last"'), true)
+  assert.equal(model.markup.includes('edges="rounded"'), true)
+  assert.equal(model.markup.includes('topology="rounded:edge:first,last"'), true)
+  assert.equal(model.markup.includes('topology="base:edge:0..3"'), true)
+  assert.equal(model.markup.includes('faces="lid"'), true)
   assert.equal(counts['sol-fillet'], 1)
   assert.equal(counts['sol-chamfer'], 1)
   assert.equal(counts['sol-shell'], 1)
