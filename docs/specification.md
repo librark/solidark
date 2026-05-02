@@ -970,6 +970,10 @@ Initial CAD viewport capabilities:
   choosing its minimum width and height in millimeters. If the evaluated model
   footprint exceeds the configured grid size, the rendered grid should expand
   and center under the model so the full XY footprint remains covered.
+- Initial viewer state should be configurable declaratively. `<sol-viewer>`
+  should support attributes such as `axes`, `edges`, `xray`, `camera`, `view`,
+  and `fit-margin` so examples and applications can choose their initial CAD
+  inspection mode without imperative setup code.
 - Shaded faces with configurable material color from Solidark styling metadata.
 - Edge outlines over shaded faces, including silhouette edges where practical.
 - Transparent or X-ray display mode.

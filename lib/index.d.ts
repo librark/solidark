@@ -139,8 +139,14 @@ export type ViewerTarget = {
 };
 
 export type ViewerOptions = {
+  axesVisible?: boolean;
+  cameraMode?: "orthographic" | "perspective";
+  edgesVisible?: boolean;
+  fitMargin?: number;
   gridSize?: number;
   gridVisible?: boolean;
+  view?: "front" | "isometric" | "right" | "top";
+  xray?: boolean;
   three?: unknown;
   renderer?: unknown;
 };
@@ -471,7 +477,10 @@ export class ThreeCadRenderer {
   dispose(): this;
   view(name: "front" | "isometric" | "right" | "top"): this;
   fit(): this;
+  toggleAxes(): this;
   toggleCamera(): this;
+  toggleEdges(): this;
+  toggleGrid(): this;
   toggleXray(): this;
   startDrag(event: PointerEvent): this;
   dragView(event: PointerEvent): this;
