@@ -3,11 +3,14 @@ import { it } from 'node:test'
 
 import { parseMarkup } from '../../lib/dom.js'
 import {
+  attachActuatorKeyboardControls,
   bootSimulation,
   createBabylonFactory,
   createFiveBarRuntime,
   createFiveBarState,
+  enableSimulationPhysics,
   loadSolidarkElements,
+  renderActuatorControls,
   renderRobotJson
 } from './main.js'
 
@@ -26,6 +29,7 @@ it('createFiveBarState creates deterministic link transforms', () => {
   assert.equal(state.links.end_effector.position[0], 0)
   assert.equal(state.joints.left_motor, 0.9)
   assert.equal(state.joints.right_motor, Math.PI - 0.9)
+  assert.deepEqual(createFiveBarState({ left_motor: 0.9 }, { baseWidth: 0, rightJoint: 'left_motor' }).links.end_effector.position, [-0.11047864288515659, 1.591030324492499, 0])
 })
 
 it('createFiveBarRuntime delegates link creation and updates', () => {
@@ -50,13 +54,104 @@ it('createFiveBarRuntime delegates link creation and updates', () => {
       updated.push([link.name, transform.length])
     }
   }, { baseWidth: 2 })
-  const state = runtime.update(0.25)
+  const limited = runtime.setActuator('left_motor_drive', 99)
+  const adjusted = runtime.adjustActuator('left_motor_drive', -0.5)
+  const state = runtime.update()
 
   assert.deepEqual(created, robot.links.map((link) => link.name))
   assert.equal(updated.length, 6)
   assert.equal(runtime.robot, robot)
   assert.equal(runtime.links.base.name, 'base')
   assert.equal(state.links.base.length, 2)
+  assert.equal(limited, 1.4)
+  assert.equal(adjusted, 0.8999999999999999)
+  assert.equal(runtime.controls.left_motor, 0.8999999999999999)
+})
+
+it('createFiveBarState derives kinematics from robot geometry and actuator metadata', () => {
+  const robot = {
+    links: [{
+      name: 'right_crank',
+      visuals: [{
+        tag: 'sol-cuboid',
+        properties: { size: [0.7, 0.05, 0.05] },
+        children: []
+      }]
+    }, {
+      name: 'left_coupler',
+      visuals: [{
+        tag: 'sol-cuboid',
+        properties: { size: [0.8, 0.04, 0.04] },
+        children: []
+      }]
+    }, {
+      name: 'right_coupler',
+      visuals: [{
+        tag: 'sol-cuboid',
+        properties: { size: [0.8, 0.04, 0.04] },
+        children: []
+      }]
+    }],
+    joints: [{
+      name: 'left_motor',
+      type: 'revolute',
+      origin: [-1, 0, 0],
+      limits: { lower: 0.5, upper: 1 }
+    }, {
+      name: 'right_motor',
+      type: 'revolute',
+      origin: [1, 0, 0],
+      limits: { lower: 2, upper: 2.5 }
+    }],
+    actuators: [{
+      name: 'left_drive',
+      joint: 'left_motor',
+      limits: { lower: 0.6, upper: 0.8 },
+      initial: 0.7
+    }, {
+      name: 'right_drive',
+      joint: 'right_motor'
+    }]
+  }
+  const state = createFiveBarState({}, { robot })
+
+  assert.equal(state.links.base.length, 2)
+  assert.equal(Math.round(state.links.left_crank.length * 1000) / 1000, 0.7)
+  assert.equal(state.joints.left_motor, 0.7)
+  assert.equal(state.joints.right_motor, 2.25)
+  assert.equal(createFiveBarRuntime({
+    links: [],
+    joints: [],
+    actuators: [{ name: 'left_motor_drive', joint: 'left_motor', limits: {} }]
+  }, {
+    createLink (link) {
+      return { name: link.name }
+    },
+    updateLink () {}
+  }).actuators[0].lower, -Math.PI)
+  assert.equal(createFiveBarRuntime({
+    links: [],
+    joints: [],
+    actuators: [{ name: 'right_motor_drive', joint: 'right_motor', limits: {} }]
+  }, {
+    createLink (link) {
+      return { name: link.name }
+    },
+    updateLink () {}
+  }).actuators[0].upper, Math.PI)
+  assert.equal(createFiveBarState({
+    left_motor: 0.7,
+    right_motor: 2.25
+  }, {
+    robot: {
+      links: robot.links,
+      joints: [
+        { name: 'left_motor', origin: [0.3, 0, 0] },
+        { name: 'right_motor', origin: [-0.3, 0, 0] }
+      ],
+      actuators: robot.actuators
+    }
+  }).links.end_effector.position[1] < 0, false)
 })
 
 it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
@@ -104,6 +199,47 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
     }
   }
   const factory = createBabylonFactory(BABYLON, scene)
+  const quaternionFactory = createBabylonFactory({
+    ...BABYLON,
+    Quaternion: {
+      FromEulerAngles (x, y, z) {
+        return { x, y, z }
+      }
+    }
+  }, scene)
+  const physicsFactory = createBabylonFactory({
+    ...BABYLON,
+    PhysicsImpostor: class PhysicsImpostor {
+      static BoxImpostor = 'box'
+      static SphereImpostor = 'sphere'
+
+      constructor (mesh, type, options, scene) {
+        Object.assign(this, { mesh, options, scene, type })
+      }
+    }
+  }, scene, { physics: { enabled: true, errors: [] } })
+  const throwingPhysics = { enabled: true, errors: [] }
+  const stringPhysics = { enabled: true, errors: [] }
+  const throwingFactory = createBabylonFactory({
+    ...BABYLON,
+    PhysicsImpostor: class PhysicsImpostor {
+      static BoxImpostor = 'box'
+
+      constructor () {
+        throw new Error('physics failed')
+      }
+    }
+  }, scene, { physics: throwingPhysics })
+  const stringThrowingFactory = createBabylonFactory({
+    ...BABYLON,
+    PhysicsImpostor: class PhysicsImpostor {
+      static BoxImpostor = 'box'
+
+      constructor () {
+        throwValue('physics string')
+      }
+    }
+  }, scene, { physics: stringPhysics })
   const mesh = factory.createLink({ name: 'left_crank' })
   const fallbackMesh = factory.createLink({ name: 'unknown_link' })
   const styledMesh = factory.createLink({
@@ -188,7 +324,69 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
       children: []
     }]
   })
+  const physicsMesh = physicsFactory.createLink({
+    name: 'physics_box',
+    inertial: { mass: 2.5 },
+    visuals: [{
+      tag: 'sol-cuboid',
+      properties: { size: [0.4, 0.05, 0.06] },
+      children: []
+    }]
+  })
+  const physicsSphereMesh = physicsFactory.createLink({
+    name: 'physics_sphere',
+    visuals: [{
+      tag: 'sol-sphere',
+      properties: { radius: 0.1 },
+      children: []
+    }]
+  })
+  const collisionMesh = factory.createLink({
+    name: 'collision',
+    visuals: [{
+      tag: 'sol-color',
+      properties: { value: 'red' },
+      children: []
+    }],
+    collisions: [{
+      tag: 'sol-cuboid',
+      properties: { depth: 0.07, length: 0.5 },
+      children: []
+    }]
+  })
+  const emptySizeMesh = factory.createLink({
+    name: 'empty_size',
+    visuals: [{
+      tag: 'sol-cuboid',
+      properties: { size: [] },
+      children: []
+    }]
+  })
+  const failedPhysicsMesh = throwingFactory.createLink({
+    name: 'failed_physics',
+    visuals: [{
+      tag: 'sol-cuboid',
+      properties: {},
+      children: []
+    }]
+  })
+  stringThrowingFactory.createLink({
+    name: 'string_failed_physics',
+    visuals: [{
+      tag: 'sol-cuboid',
+      properties: {},
+      children: []
+    }]
+  })
   const externalMesh = { rotation: {}, scaling: {} }
+  const quaternionMesh = quaternionFactory.createLink({
+    name: 'quaternion',
+    visuals: [{
+      tag: 'sol-cuboid',
+      properties: {},
+      children: []
+    }]
+  })
 
   factory.updateLink(mesh, {
     position: [1, 2, 3],
@@ -205,6 +403,11 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
     rotation: 1.5,
     length: 0.25
   })
+  quaternionFactory.updateLink(quaternionMesh, {
+    position: [0, 0, 0],
+    rotation: 0.75,
+    length: 0.5
+  })
 
   assert.equal(mesh.name, 'left_crank')
   assert.equal(mesh.kind, 'box')
@@ -217,7 +420,7 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
   assert.equal(fallbackMesh.material.diffuseColor.r, 0.82)
   assert.equal(fallbackMesh.material.diffuseColor.g, 0.86)
   assert.equal(fallbackMesh.material.diffuseColor.b, 0.92)
-  assert.deepEqual(styledMesh.options, { depth: 0.08, height: 0.04, width: 1 })
+  assert.deepEqual(styledMesh.options, { depth: 0.08, height: 0.04, width: 1.8 })
   assert.equal(styledMesh.material.diffuseColor.r, 1)
   assert.equal(styledMesh.material.diffuseColor.g, 1)
   assert.equal(styledMesh.material.diffuseColor.b, 0)
@@ -238,6 +441,16 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
   assert.deepEqual(sphereMesh.options, { diameter: 0.18 })
   assert.equal(defaultSphereMesh.kind, 'sphere')
   assert.deepEqual(defaultSphereMesh.options, { diameter: 0.16 })
+  assert.equal(physicsMesh.physicsImpostor.type, 'box')
+  assert.equal(physicsMesh.metadata.solidarkInertial.mass, 2.5)
+  assert.equal(physicsSphereMesh.physicsImpostor.type, 'sphere')
+  assert.deepEqual(collisionMesh.options, { depth: 0.07, height: 0.07, width: 0.5 })
+  assert.equal(collisionMesh.material.diffuseColor.r, 1)
+  assert.deepEqual(emptySizeMesh.options, { depth: 0.06, height: 0.06, width: 1 })
+  assert.equal(failedPhysicsMesh.physicsImpostor, undefined)
+  assert.equal(physicsMesh.physicsImpostor.options.mass, 0)
+  assert.deepEqual(throwingPhysics.errors, ['physics failed'])
+  assert.deepEqual(stringPhysics.errors, ['physics string'])
   assert.equal(Math.round(sphereMesh.material.diffuseColor.r * 1000) / 1000, 0.671)
   assert.equal(Math.round(sphereMesh.material.diffuseColor.g * 1000) / 1000, 0.804)
   assert.equal(Math.round(sphereMesh.material.diffuseColor.b * 1000) / 1000, 0.937)
@@ -250,6 +463,7 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
   assert.equal(mesh.position.z, 3)
   assert.equal(mesh.rotation.z, 0.5)
   assert.equal(mesh.scaling.x, 0.75)
+  assert.deepEqual(quaternionMesh.rotationQuaternion, { x: 0, y: 0, z: 0.75 })
 })
 
 it('bootSimulation compiles the robot and starts a Babylon-like render loop', async () => {
@@ -267,7 +481,9 @@ it('bootSimulation compiles the robot and starts a Babylon-like render loop', as
   const canvas = {}
   const cadModel = { innerHTML: '' }
   const robotJson = { textContent: '' }
+  const actuatorControls = fakeElement('div')
   const refreshed = []
+  const keyHandlers = []
   const cadViewer = {
     async refresh (target, options) {
       refreshed.push([target, options.runtime])
@@ -282,8 +498,15 @@ it('bootSimulation compiles the robot and starts a Babylon-like render loop', as
         '[data-status]': status,
         '[data-robot-json]': robotJson,
         '[data-robot-viewer]': cadViewer,
+        '[data-actuator-controls]': actuatorControls,
         'sol-robot': robotElement
       }[selector]
+    },
+    createElement (tag) {
+      return fakeElement(tag)
+    },
+    addEventListener (event, handler) {
+      keyHandlers.push([event, handler])
     }
   }
   const BABYLON = fakeBabylon()
@@ -303,10 +526,134 @@ it('bootSimulation compiles the robot and starts a Babylon-like render loop', as
   assert.equal(JSON.parse(robotJson.textContent).name, 'five-bar')
   assert.deepEqual(refreshed, [[cadModel, runtime]])
   assert.equal(result.cadResult.target, cadModel)
-  assert.equal(status.textContent, 'Loaded 6 links')
+  assert.equal(status.textContent, 'Loaded 6 links with physics')
   assert.equal(result.scene.rendered, 2)
   assert.equal(result.camera.attachedCanvas, canvas)
   assert.equal(result.light.intensity, 0.85)
+  assert.equal(result.physics.enabled, true)
+  assert.equal(result.controls.target, actuatorControls)
+  assert.equal(actuatorControls.childNodes.length, 2)
+  assert.equal(keyHandlers[0][0], 'keydown')
+})
+
+it('bootSimulation reports when Babylon physics is unavailable', async () => {
+  const [robotElement] = parseMarkup(`
+    <sol-robot name="static-five-bar">
+      <sol-robot-link name="base"></sol-robot-link>
+      <sol-robot-link name="left_crank"></sol-robot-link>
+      <sol-robot-link name="right_crank"></sol-robot-link>
+      <sol-robot-link name="left_coupler"></sol-robot-link>
+      <sol-robot-link name="right_coupler"></sol-robot-link>
+      <sol-robot-link name="end_effector"></sol-robot-link>
+    </sol-robot>
+  `)
+  const status = { textContent: '' }
+  const document = simulationDocument(robotElement, status)
+  const BABYLON = fakeBabylon()
+
+  BABYLON.CannonJSPlugin = null
+
+  const result = await bootSimulation({
+    BABYLON,
+    configureKernel () {},
+    document,
+    loadElements: async () => [],
+    runtime: {}
+  })
+
+  assert.equal(result.physics.enabled, false)
+  assert.equal(status.textContent, 'Loaded 6 links without physics')
+})
+
+it('renderActuatorControls and keyboard handlers clamp actuator commands', () => {
+  const target = fakeElement('div')
+  const keyHandlers = []
+  const document = {
+    querySelector (selector) {
+      assert.equal(selector, '[data-actuator-controls]')
+      return target
+    },
+    createElement (tag) {
+      return fakeElement(tag)
+    },
+    addEventListener (event, handler) {
+      keyHandlers.push([event, handler])
+    }
+  }
+  const updates = []
+  const runtime = {
+    actuators: [
+      { name: 'left', joint: 'left_motor', lower: 0, upper: Math.PI / 2, value: Math.PI / 4 },
+      { name: 'right', joint: 'right_motor', lower: -Math.PI / 2, upper: 0, value: -Math.PI / 4 }
+    ],
+    adjustActuator (name, delta) {
+      const actuator = this.actuators.find((entry) => entry.name === name)
+      actuator.value = Math.min(Math.max(actuator.value + delta, actuator.lower), actuator.upper)
+    },
+    setActuator (name, value) {
+      const actuator = this.actuators.find((entry) => entry.name === name)
+      actuator.value = Math.min(Math.max(value, actuator.lower), actuator.upper)
+    },
+    update () {
+      updates.push(this.actuators.map((actuator) => actuator.value))
+    }
+  }
+  const controls = renderActuatorControls(document, runtime)
+  const prevented = []
+
+  attachActuatorKeyboardControls(document, runtime, controls)
+  controls.inputs.get('left').input.value = '90'
+  controls.inputs.get('left').input.listeners.input[0]()
+  keyHandlers[0][1]({ key: 'ArrowRight', preventDefault () { prevented.push('right') } })
+  keyHandlers[0][1]({ key: 'ArrowUp', preventDefault () { prevented.push('up') } })
+  keyHandlers[0][1]({ key: 'Escape', preventDefault () { prevented.push('escape') } })
+
+  assert.equal(target.childNodes.length, 2)
+  assert.equal(controls.inputs.get('left').output.textContent, '90 deg')
+  assert.equal(runtime.actuators[0].value, Math.PI / 2)
+  assert.equal(Math.round(runtime.actuators[1].value * 1000) / 1000, -0.698)
+  assert.deepEqual(prevented, ['right', 'up'])
+  assert.equal(updates.length, 3)
+})
+
+it('enableSimulationPhysics reports enabled and unavailable Babylon physics states', () => {
+  const BABYLON = fakeBabylon()
+  const enabledScene = new BABYLON.Scene({})
+  const disabledScene = new BABYLON.Scene({})
+
+  disabledScene.enablePhysics = () => false
+  const unavailable = enableSimulationPhysics({}, {})
+  const enabled = enableSimulationPhysics(BABYLON, enabledScene)
+  const disabled = enableSimulationPhysics(BABYLON, disabledScene)
+  const throwing = enableSimulationPhysics({
+    CANNON: {},
+    CannonJSPlugin: class CannonJSPlugin {
+      constructor () {
+        throw new Error('missing solver')
+      }
+    },
+    Vector3: BABYLON.Vector3
+  }, enabledScene)
+  const throwingString = enableSimulationPhysics({
+    CANNON: {},
+    CannonJSPlugin: class CannonJSPlugin {
+      constructor () {
+        throwValue('string failure')
+      }
+    },
+    Vector3: BABYLON.Vector3
+  }, enabledScene)
+
+  assert.equal(unavailable.enabled, false)
+  assert.equal(unavailable.reason, 'physics-plugin-unavailable')
+  assert.equal(enabled.enabled, true)
+  assert.equal(enabled.plugin, 'CannonJSPlugin')
+  assert.equal(enabledScene.physicsGravity.y, -9.807)
+  assert.equal(disabled.enabled, false)
+  assert.equal(disabled.reason, 'physics-not-enabled')
+  assert.equal(throwing.enabled, false)
+  assert.deepEqual(throwing.errors, ['missing solver'])
+  assert.deepEqual(throwingString.errors, ['string failure'])
 })
 
 it('renderRobotJson writes the generated robot JSON structure into the page', () => {
@@ -352,6 +699,12 @@ function fakeBabylon () {
         Object.assign(this, { b, g, r })
       }
     },
+    CANNON: {},
+    CannonJSPlugin: class CannonJSPlugin {
+      constructor (useDeltaForWorldStep, iterations, cannon) {
+        Object.assign(this, { cannon, iterations, name: 'CannonJSPlugin', useDeltaForWorldStep })
+      }
+    },
     Engine: class Engine {
       constructor (canvas, antialias) {
         Object.assign(this, { antialias, canvas })
@@ -382,6 +735,18 @@ function fakeBabylon () {
         }
       }
     },
+    PhysicsImpostor: class PhysicsImpostor {
+      static BoxImpostor = 'box'
+      static SphereImpostor = 'sphere'
+
+      constructor (mesh, type, options, scene) {
+        Object.assign(this, { mesh, options, scene, type })
+      }
+
+      forceUpdate () {
+        this.updated = true
+      }
+    },
     StandardMaterial: class StandardMaterial {
       constructor (name, scene) {
         Object.assign(this, { name, scene })
@@ -395,6 +760,12 @@ function fakeBabylon () {
         }
       }
 
+      enablePhysics (gravity, plugin) {
+        this.physicsGravity = gravity
+        this.physicsPlugin = plugin
+        return true
+      }
+
       render () {
         this.beforeRender()
         this.rendered = (this.rendered || 0) + 1
@@ -406,4 +777,62 @@ function fakeBabylon () {
       }
     }
   }
+}
+
+function simulationDocument (robotElement, status = { textContent: '' }) {
+  const canvas = {}
+  const cadModel = { innerHTML: '' }
+  const robotJson = { textContent: '' }
+  const actuatorControls = fakeElement('div')
+  const cadViewer = {
+    async refresh (target) {
+      return { target }
+    }
+  }
+
+  return {
+    querySelector (selector) {
+      return {
+        '#simulation-canvas': canvas,
+        '#five-bar-geometry': cadModel,
+        '[data-status]': status,
+        '[data-robot-json]': robotJson,
+        '[data-robot-viewer]': cadViewer,
+        '[data-actuator-controls]': actuatorControls,
+        'sol-robot': robotElement
+      }[selector]
+    },
+    createElement (tag) {
+      return fakeElement(tag)
+    },
+    addEventListener () {}
+  }
+}
+
+function fakeElement (tag) {
+  return {
+    childNodes: [],
+    className: '',
+    listeners: {},
+    tag,
+    append (...children) {
+      children.forEach((child) => this.appendChild(child))
+    },
+    appendChild (child) {
+      this.childNodes.push(child)
+      return child
+    },
+    addEventListener (event, handler) {
+      this.listeners[event] = this.listeners[event] || []
+      this.listeners[event].push(handler)
+    },
+    replaceChildren (...children) {
+      this.childNodes = []
+      this.append(...children)
+    }
+  }
+}
+
+function throwValue (value) {
+  throw value
 }

@@ -103,6 +103,15 @@ export type RobotJoint = {
   limits?: Record<string, number>;
 };
 
+export type RobotActuator = {
+  name: string;
+  joint: string;
+  kind?: string;
+  limits?: Record<string, number>;
+  initial?: number;
+  [property: string]: unknown;
+};
+
 export type RobotDefinition = {
   schema: string;
   name: string;
@@ -110,7 +119,7 @@ export type RobotDefinition = {
   links: RobotLink[];
   joints: RobotJoint[];
   frames: Record<string, unknown>[];
-  actuators: Record<string, unknown>[];
+  actuators: RobotActuator[];
   sensors: Record<string, unknown>[];
   sourceMap: RobotSourceMapEntry[];
   diagnostics: RobotDiagnostic[];

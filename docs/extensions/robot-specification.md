@@ -100,6 +100,17 @@ Compilation should produce a robot artifact bundle:
 Robot components may produce no geometry. Their job is to describe physical and
 semantic structure around Solidark geometry.
 
+`sol-robot-collision` should be the preferred source for simulation collision
+bodies when present. Simulation loaders may fall back to `sol-robot-visual` for
+early prototypes, but authored collision geometry should take precedence. Core
+CAD viewers should render `sol-robot-visual` geometry by default and keep
+collision bodies hidden unless a dedicated collision debug mode is requested.
+
+Mechanisms should define both actuated and passive joints. Closed-chain
+mechanisms, such as five-bar and delta robots, may be represented accurately in
+the Solidark robot JSON graph even when a later URDF exporter must validate or
+approximate them because URDF expects a tree.
+
 ## Robot IR
 
 The robot compiler should produce a deterministic, serializable IR before
@@ -157,7 +168,9 @@ Example shape:
     {
       "name": "x_motor",
       "joint": "x_axis",
-      "kind": "linear-motor"
+      "kind": "linear-motor",
+      "limits": { "lower": 0, "upper": 0.3 },
+      "initial": 0
     }
   ]
 }
@@ -170,6 +183,10 @@ Exporter rules:
 - Preserve source ids and component paths for every exported link, joint, mesh,
   actuator, and sensor.
 - Include mesh asset paths rather than embedding binary mesh data.
+- Preserve actuator limits and initial positions in the same units used by the
+  compiled joint model: radians for angular joints and meters for prismatic
+  joints. Solidark source markup should continue to accept degrees and
+  millimeters for author ergonomics.
 - Keep behavior out of the export. A simulation project may attach controllers,
   input handling, physics constraints, or animation loops after loading the
   robot definition.
@@ -297,4 +314,3 @@ Exit criteria:
 
 - ROS URDF is the primary initial robot interchange target:
   https://docs.ros.org/en/kilted/Tutorials/Intermediate/URDF/URDF-Main.html
-
