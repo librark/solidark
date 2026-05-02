@@ -24,6 +24,14 @@ export const showcaseModels = Object.freeze([
     summary: 'A wheel-like solid using repeated subtractive cuboids around a cylinder.'
   },
   {
+    id: 'topology-features',
+    title: 'Topology Features',
+    level: 'Intermediate',
+    format: 'HTML',
+    source: './examples/topology-features.html',
+    summary: 'Fillet, chamfer, and shell features using indexed topology selectors such as ranges and aliases.'
+  },
+  {
     id: 'enclosure',
     title: 'Electronics Enclosure',
     level: 'Advanced',

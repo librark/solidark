@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Topology Features</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js",
+          "three": "/node_modules/three/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="standalone-shell">
+      <header class="standalone-header">
+        <a href="../">Showcase</a>
+        <p>Intermediate declarative HTML</p>
+        <h1>Topology Features</h1>
+      </header>
+      <sol-model id="topology-features" class="source-model" data-showcase-model>
+        <sol-group>
+          <sol-color value="#4f7cac">
+            <sol-translate by="-42 0 0">
+              <sol-fillet radius="2.5" edges="first last">
+                <sol-cuboid size="24 24 18"></sol-cuboid>
+              </sol-fillet>
+            </sol-translate>
+          </sol-color>
+          <sol-color value="#d28f2d">
+            <sol-chamfer distance="2" edges="0..3">
+              <sol-cuboid size="24 24 18"></sol-cuboid>
+            </sol-chamfer>
+          </sol-color>
+          <sol-color value="#2f9f7b">
+            <sol-translate by="42 0 0">
+              <sol-shell thickness="2" faces="last">
+                <sol-cuboid size="24 24 18"></sol-cuboid>
+              </sol-shell>
+            </sol-translate>
+          </sol-color>
+        </sol-group>
+      </sol-model>
+      <sol-viewer class="viewer-surface" for="topology-features"></sol-viewer>
+    </main>
+    <script type="module" src="../standalone.js"></script>
+  </body>
+</html>

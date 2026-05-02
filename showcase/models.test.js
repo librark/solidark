@@ -28,6 +28,7 @@ it('exports a range of showcase model documents', () => {
 
 it('gets models by id and falls back to the first model', () => {
   assert.equal(getShowcaseModel('bracket').title, 'Parametric Bracket')
+  assert.equal(getShowcaseModel('topology-features').source, './examples/topology-features.html')
   assert.equal(getShowcaseModel('missing').id, 'primitives')
 })
 
@@ -68,6 +69,39 @@ it('extracts component showcase roots and reports missing model markers', () => 
     /data-showcase-model/
   )
   assert.equal(countModelTags('<showcase-enclosure><sol-cuboid></sol-cuboid></showcase-enclosure>')['showcase-enclosure'], 1)
+})
+
+it('loads the topology feature showcase markup', async () => {
+  const model = await loadShowcaseModel('topology-features', {
+    async readText () {
+      return `
+        <html>
+          <body>
+            <sol-model id="topology-features" data-showcase-model>
+              <sol-fillet radius="2.5" edges="first last">
+                <sol-cuboid></sol-cuboid>
+              </sol-fillet>
+              <sol-chamfer distance="2" edges="0..3">
+                <sol-cuboid></sol-cuboid>
+              </sol-chamfer>
+              <sol-shell thickness="2" faces="last">
+                <sol-cuboid></sol-cuboid>
+              </sol-shell>
+            </sol-model>
+          </body>
+        </html>
+      `
+    }
+  })
+  const counts = countModelTags(model.markup)
+
+  assert.equal(model.title, 'Topology Features')
+  assert.equal(model.markup.includes('edges="first last"'), true)
+  assert.equal(model.markup.includes('edges="0..3"'), true)
+  assert.equal(model.markup.includes('faces="last"'), true)
+  assert.equal(counts['sol-fillet'], 1)
+  assert.equal(counts['sol-chamfer'], 1)
+  assert.equal(counts['sol-shell'], 1)
 })
 
 it('reads showcase sources through fetch', async () => {
