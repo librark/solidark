@@ -569,8 +569,10 @@ Required semantics:
 - `<sol-difference>` treats its first child as the base and subtracts all
   subsequent tool shapes in DOM order.
 - `<sol-intersection>` returns the common volume of all children.
-- `<sol-group>` preserves multiple children without performing a boolean
-  operation.
+- `<sol-group>` preserves multiple children as a compound without performing a
+  boolean operation. In an OpenCascade-backed runtime this should use a topology
+  compound rather than boolean fuse, so disjoint parts remain exportable as one
+  grouped result.
 
 Boolean operations should expose optional operation settings:
 
@@ -680,7 +682,7 @@ class ProfiledPlate extends Component {
 }
 ```
 
-## Assemblies and Metadata
+## Future: Assemblies and Metadata
 
 Solidark should support both single-part models and assemblies.
 
@@ -860,7 +862,7 @@ export type EvaluationResult = {
 Evaluation should be deterministic for identical input trees, kernel versions,
 and tolerance settings.
 
-## Caching
+## Future: Caching
 
 Solidark should support operation-level caching because CAD evaluation can be
 expensive.
@@ -956,12 +958,12 @@ Viewer requirements:
 - Preserve component-to-geometry mapping where practical so changed or selected
   components can be highlighted.
 
-Initial CAD viewport capabilities:
+Current CAD viewport baseline:
 
 - Orbit, pan, zoom, and fit-to-model controls.
 - Orthographic and perspective camera modes.
 - Named view presets such as top, front, right, and isometric.
-- Axes, grid, and optional view cube or orientation widget.
+- Axes and grid.
 - Axis labels should remain visible and interactive; clicking an axis label
   should toggle the rendered axis lines without changing the model.
 - Grid display should be configurable from `<sol-viewer>`. The grid should be
@@ -976,17 +978,21 @@ Initial CAD viewport capabilities:
   inspection mode without imperative setup code.
 - Shaded faces with configurable material color from Solidark styling metadata.
 - Edge outlines over shaded faces, including silhouette edges where practical.
-- Transparent or X-ray display mode.
-- Section or clipping planes for inspecting interiors.
-- Per-component or per-shape hover and selection highlighting.
 - Bounds display and camera framing based on evaluated model extents.
 - Empty, loading, and diagnostic states that are visible in the viewer surface.
 
-The first implementation may start with a smaller Three.js renderer, but its
-architecture should leave room for the capabilities above. Viewer code should
-not mutate model geometry and should not become a graphical editor. Selection
-and inspection may report component metadata, but editing actions should remain
-source-code-driven.
+Future CAD viewport capabilities:
+
+- Optional view cube or orientation widget.
+- Transparent or X-ray display mode.
+- Section or clipping planes for inspecting interiors.
+- Per-component or per-shape hover and selection highlighting.
+- Topology-level inspection that can report selected face, edge, or vertex
+  metadata when the evaluated result can preserve that mapping.
+
+Viewer code should not mutate model geometry and should not become a graphical
+editor. Selection and inspection may report component metadata, but editing
+actions should remain source-code-driven.
 
 ## Import and Export
 
@@ -1029,11 +1035,13 @@ Initial import targets:
   mesh workflows.
 - BREP as a kernel-native external shape component.
 
-Imported STEP assemblies should preserve their hierarchy in the first release.
-Imported shapes should participate in transforms, booleans, features, and
-assemblies like any other Solidark shape when their geometry kind supports the
-requested operation. Imported STL meshes should remain mesh geometry unless
-explicitly converted or reconstructed into a B-Rep shape by a dedicated feature.
+Imported STEP assemblies should preserve their hierarchy when the imported file
+contains assembly structure and the active kernel exposes enough document data to
+recover it. Imported shapes should participate in transforms, booleans,
+features, and assemblies like any other Solidark shape when their geometry kind
+supports the requested operation. Imported STL meshes should remain mesh
+geometry unless explicitly converted or reconstructed into a B-Rep shape by a
+dedicated feature.
 
 ## Diagnostics and Errors
 
@@ -1100,7 +1108,6 @@ Potential package layout:
 - `solidark/mesh`: optional mesh conversion helpers if they are not part of
   the core entry point.
 - `solidark/viewer`: optional browser visualization helpers and custom elements.
-- `solidark/testing`: geometry assertions and test helpers.
 
 The core package should avoid importing viewer integrations by default.
 
@@ -1132,8 +1139,7 @@ Source and test layout:
 - Every implemented source file must be accompanied by a corresponding unit test
   file in the same directory.
 - Test files should use Node's built-in test framework, `node:test`.
-- Assertions should use `node:assert/strict` unless a focused helper from
-  `solidark/testing` makes the intent clearer.
+- Assertions should use `node:assert/strict`.
 - The recommended naming convention is `name.js` with `name.test.js` beside it.
 - The project should aim for 100% test coverage at all times.
 - Lines may be excluded from coverage only when explicitly ignored for a
