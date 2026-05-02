@@ -981,12 +981,14 @@ Initial export targets:
 - BREP for kernel-native debugging and interchange.
 
 Export should be available through small helper functions and kernel methods.
-For example, `exportShapeToStep(shape, { kernel })` and
-`exportShapeToStl(shape, { kernel })` should delegate to `kernel.toStep()` and
-`kernel.toStl()` when the active kernel supports precise CAD export. The
-OpenCascade-backed kernel should use the OpenCascade virtual file system and
-writer APIs for STEP and STL, then return the exported file contents to the
-caller. In-memory kernels may return `null` for these methods.
+For example, `exportShapeToStep(shape, { kernel })`,
+`exportShapeToStl(shape, { kernel })`, and
+`exportShapeToBrep(shape, { kernel })` should delegate to `kernel.toStep()`,
+`kernel.toStl()`, and `kernel.toBrep()` when the active kernel supports precise
+CAD export. The OpenCascade-backed kernel should use the OpenCascade virtual
+file system and writer APIs for STEP, STL, and BREP, then return the exported
+file contents to the caller. In-memory kernels may return `null` for these
+methods.
 
 Initial import targets:
 

@@ -143,6 +143,7 @@ export abstract class Kernel {
     entry: KernelShape,
     options?: Record<string, unknown>
   ): RenderableMesh | RenderableMesh[] | null | undefined;
+  toBrep(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array | null;
   toStep(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array | null;
   toStl(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array | null;
   dispose(entry: KernelShape): void;
@@ -235,6 +236,7 @@ export class MemoryKernel extends Kernel {
 export class OpencascadeKernel extends MemoryKernel {
   openCascade: unknown;
   constructor(openCascade: unknown);
+  toBrep(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array;
   toStep(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array;
   toStl(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array;
 }
@@ -295,6 +297,7 @@ export function parseVector(value: string | number[] | { x?: number; y?: number;
 export function parseAttributeValue(value: string): boolean | number | number[] | string;
 export function stableStringify(value: unknown): string;
 export const GLB_MIME_TYPE: "model/gltf-binary";
+export const BREP_MIME_TYPE: "model/vnd.opencascade.brep";
 export const STEP_MIME_TYPE: "model/step";
 export const STL_MIME_TYPE: "model/stl";
 export function exportMeshesToGlb(meshes?: RenderableMesh[], options?: { generator?: string }): ArrayBuffer;
@@ -304,6 +307,10 @@ export function createGlbObjectUrl(
   options?: { generator?: string },
   url?: { createObjectURL?: (blob: Blob) => string }
 ): GlbObjectUrl;
+export function exportShapeToBrep(
+  entry: KernelShape,
+  options?: Record<string, unknown> & { kernel?: { toBrep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
+): string | Uint8Array;
 export function exportShapeToStep(
   entry: KernelShape,
   options?: Record<string, unknown> & { kernel?: { toStep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
