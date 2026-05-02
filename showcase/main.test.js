@@ -281,15 +281,19 @@ it('reports showcase evaluation errors', async () => {
   assert.equal(formatEvaluationError({
     diagnostics: [{
       cause: 'OpenCascade binding not found: Missing_Binding',
+      errorCategory: 'kernel-operation-failure',
       method: 'cuboid',
       path: 'sol-model > sol-cuboid[0]',
+      suggestion: 'Check the component inputs and underlying kernel support for this operation.',
       stage: 'evaluate'
     }]
   }), [
     'Evaluation failed: OpenCascade binding not found: Missing_Binding',
     'Component: sol-model > sol-cuboid[0]',
     'Kernel method: cuboid',
-    'Stage: evaluate'
+    'Stage: evaluate',
+    'Error category: kernel-operation-failure',
+    'Suggestion: Check the component inputs and underlying kernel support for this operation.'
   ].join('\n'))
 })
 

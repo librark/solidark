@@ -69,10 +69,12 @@ export type EvaluationDiagnostic = {
   stage: string;
   tag: string;
   category?: string;
+  errorCategory?: string;
   method: string;
   path: string;
   properties: Record<string, unknown>;
   cause: string;
+  suggestion?: string;
 };
 
 export type RenderableMesh = {

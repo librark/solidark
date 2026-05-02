@@ -1043,6 +1043,7 @@ Required error categories:
 - Kernel operation failure.
 - Boolean operation failure.
 - Topology validation failure.
+- Mesh conversion failure.
 - Export failure.
 
 Diagnostics should include:
@@ -1051,7 +1052,14 @@ Diagnostics should include:
 - Operation name.
 - Source component name or id when available.
 - Kernel message when available.
+- A stable machine-readable `errorCategory` value.
 - Suggested user action when the issue is predictable.
+
+The browser showcase and `<sol-viewer>` should surface the same diagnostics in a
+developer-readable form. When a failure is predictable, the displayed message
+should include both the low-level kernel cause and a short suggestion, such as
+checking numeric attributes, kernel import/WASM configuration, topology
+selectors, or whether the shape can be triangulated for display.
 
 ## Package Structure
 

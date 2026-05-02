@@ -203,12 +203,22 @@ export function formatEvaluationError (error) {
   const [diagnostic] = Array.isArray(error?.diagnostics) ? error.diagnostics : []
 
   if (diagnostic) {
-    return [
+    const lines = [
       `Evaluation failed: ${diagnostic.cause}`,
       `Component: ${diagnostic.path}`,
       `Kernel method: ${diagnostic.method}`,
       `Stage: ${diagnostic.stage}`
-    ].join('\n')
+    ]
+
+    if (diagnostic.errorCategory) {
+      lines.push(`Error category: ${diagnostic.errorCategory}`)
+    }
+
+    if (diagnostic.suggestion) {
+      lines.push(`Suggestion: ${diagnostic.suggestion}`)
+    }
+
+    return lines.join('\n')
   }
 
   return `Evaluation failed: ${message}`
