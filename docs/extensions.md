@@ -84,8 +84,8 @@ Potential package families:
 - `@solidark/robot`: robot links, joints, frames, physical metadata, URDF
   export, JSON robot descriptions, and robot package manifests.
 - `@solidark/circuit`: circuit and board definition components, circuit IR,
-  fabrication outputs, KiCad export, Gerber export, and circuit package
-  manifests.
+  automatic trace routing, fabrication outputs, KiCad export, Gerber export,
+  and circuit package manifests.
 
 The first implementation can start with fewer packages, but the boundaries
 should remain visible. A monolithic `@solidark/extensions` package would be
@@ -575,17 +575,30 @@ Later exports:
 
 ### Routing Strategy
 
-Routing should be staged:
+Automatic trace routing should be a first-class responsibility of the circuit
+package. Users should be able to define parts, pads, nets, constraints, and
+keepouts declaratively, then ask Solidark to produce routed traces and vias as
+part of circuit compilation.
 
-- Phase 1: explicit manual traces only.
-- Phase 2: simple constraint validation and ratsnest diagnostics.
-- Phase 3: external autorouter adapter.
-- Phase 4: optional built-in lightweight routing for simple boards if demand
-  justifies it.
+Routing should still be staged so the package can become useful without trying
+to solve every PCB-routing problem immediately:
 
-Solidark should not start by implementing a full autorouter. The early circuit
-work should make board description, footprint placement, mechanical integration,
-and fabrication exports reliable before optimizing trace generation.
+- Phase 1: explicit manual traces plus ratsnest generation and route
+  diagnostics.
+- Phase 2: built-in deterministic autorouting for simple one-layer and two-layer
+  boards.
+- Phase 3: routing constraints such as preferred layers, trace widths,
+  clearances, via rules, differential-pair metadata, keepouts, and routing
+  priorities.
+- Phase 4: external autorouter adapters when a board exceeds the built-in
+  router's practical scope.
+- Phase 5: interactive or incremental routing support if the browser workflow
+  later needs it.
+
+The built-in router should favor deterministic, testable behavior over
+black-box optimization. It should be acceptable for the first router to refuse a
+complex board with clear diagnostics, but simple boards should route without
+leaving Solidark.
 
 ### Circuit Validation
 
@@ -595,6 +608,7 @@ The circuit compiler should report:
 - Missing footprints.
 - Unknown nets or pin references.
 - Unconnected required pins.
+- Nets that could not be routed automatically.
 - Trace width or clearance violations.
 - Via diameter and annular ring violations.
 - Copper too close to board edge or cutouts.
@@ -603,6 +617,7 @@ The circuit compiler should report:
 - Missing BOM fields for assembly export.
 - Component height violations against declared keepout volumes.
 - Board outline self-intersections or unsupported curves for a given exporter.
+- Routing constraints that conflict with each other or with fabrication rules.
 
 ### Open Questions
 
@@ -610,6 +625,8 @@ The circuit compiler should report:
   should common parts have built-in footprint defaults?
 - Should schematic capture be first-class in the first circuit release, or
   should layout/netlist come first?
+- What routing algorithm should the first deterministic autorouter use?
+- Which autorouting features are mandatory for the first useful two-layer board?
 - Should the circuit extension interoperate with tscircuit by importing or
   exporting Circuit JSON?
 - Should supplier metadata be generic or should adapters exist for JLCPCB,
@@ -696,6 +713,7 @@ Exit criteria:
 
 - Implement circuit component classes.
 - Compile circuit DOM trees into a deterministic circuit IR.
+- Generate ratsnest data and explicit manual routes.
 - Render 2D board data into a preview-friendly structure.
 - Generate a 3D board preview using Solidark geometry.
 - Add DRC diagnostics for the first simple rules.
@@ -704,8 +722,24 @@ Exit criteria:
 
 - A simple two-layer board with parts, nets, and manual traces can be compiled.
 - The board has both a circuit IR and a 3D Solidark preview model.
+- Unrouted nets are visible through ratsnest diagnostics.
 
-### Phase 3: Circuit External Export
+### Phase 3: Circuit Autorouting
+
+- Implement a deterministic built-in autorouter for simple boards.
+- Generate routed traces and vias from nets, pads, board outline, layers, and
+  keepouts.
+- Support basic routing constraints for trace width, clearance, via size, and
+  preferred layers.
+- Report unroutable nets with stable diagnostics.
+
+Exit criteria:
+
+- A simple one-layer board can route automatically.
+- A simple two-layer board can route automatically using vias.
+- Re-running the same board produces the same routed output.
+
+### Phase 4: Circuit External Export
 
 - Generate Gerber layer files and drill files.
 - Generate BOM and pick-and-place files.
@@ -719,7 +753,7 @@ Exit criteria:
 - A fabrication archive can be produced with Gerber, drill, BOM, and placement
   outputs.
 
-### Phase 4: Cross-Domain Workflows
+### Phase 5: Cross-Domain Workflows
 
 - Allow circuit boards to mount into robot links or mechanical assemblies.
 - Add connector, motor, sensor, and mounting-hole correspondence helpers.
@@ -758,8 +792,9 @@ be covered by command construction tests and small opt-in integration tests.
   constraints, sensors, and actuators. Solidark should keep its robot JSON
   explicit and versioned so those loaders stay simple.
 - Mesh handoff can lose B-Rep precision. CAD source should remain authoritative.
-- Circuit design is its own domain. The extension should avoid overpromising
-  autorouting and focus first on deterministic data structures and exports.
+- Circuit design is its own domain. The built-in autorouter should be useful for
+  simple boards, but it must be explicit about unsupported constraints and
+  boards that require a stronger external router.
 - Source maps can become fragile if names are implicit. Extensions should
   encourage explicit names for exported objects.
 - Browser workflows and Node workflows have different capabilities. Package
