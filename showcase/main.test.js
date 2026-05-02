@@ -193,6 +193,41 @@ it('ignores export button clicks before a model is ready', () => {
   assert.equal(document.nodes.get('[data-export-brep]').disabled, true)
 })
 
+it('shows export errors in the model details panel', async () => {
+  const document = createDocumentStub()
+
+  const app = createShowcaseApp({
+    document,
+    downloaders: {
+      step () {
+        throw new Error('STEP export failed')
+      }
+    },
+    modelLoader: createModelLoader(),
+    runtime: {
+      async evaluate () {
+        return {
+          model: { tag: 'sol-model', implicitUnion: true },
+          shapes: [{ tag: 'sol-cuboid' }],
+          meshes: [{ tag: 'sol-cuboid' }]
+        }
+      }
+    },
+    viewerFactory () {
+      return {
+        render () {
+          return this
+        }
+      }
+    }
+  })
+
+  await app.selectModel('primitives')
+  document.nodes.get('[data-export-step]').listeners.click()
+
+  assert.equal(document.nodes.get('[data-details]').textContent, 'Evaluation failed: STEP export failed')
+})
+
 it('tolerates missing export buttons in embedded showcase shells', () => {
   const document = createDocumentStub()
 

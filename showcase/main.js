@@ -53,7 +53,10 @@ export function createShowcaseApp ({
     result: null
   }
 
-  setupExportButtons(exportButtons, selection, downloaders)
+  setupExportButtons(exportButtons, selection, downloaders, {
+    details,
+    kernel: () => runtime.kernel || globalThis.kernel
+  })
   setExportButtonsEnabled(exportButtons, false)
 
   async function selectModel (id) {
@@ -105,7 +108,7 @@ export function createShowcaseApp ({
   }
 }
 
-function setupExportButtons (buttons, selection, downloaders) {
+function setupExportButtons (buttons, selection, downloaders, { details, kernel } = {}) {
   for (const [format, button] of Object.entries(buttons)) {
     if (!button || typeof button.addEventListener !== 'function') {
       continue
@@ -116,9 +119,16 @@ function setupExportButtons (buttons, selection, downloaders) {
         return
       }
 
-      downloaders[format](selection.result, {
-        filename: exportFilename(selection.model, format)
-      })
+      try {
+        downloaders[format](selection.result, {
+          filename: exportFilename(selection.model, format),
+          kernel: kernel?.()
+        })
+      } catch (error) {
+        if (details) {
+          details.textContent = formatEvaluationError(error)
+        }
+      }
     })
   }
 }
