@@ -1,17 +1,17 @@
 # Solidark Extension Implementation Plan
 
-Status: draft 0.2
+Status: draft 0.3
 
 Solidark's core should stay focused on declarative CAD geometry. Extension
 packages should add domain semantics, artifact packaging, and integration with
-external simulation or fabrication systems without making the core library
-depend on those systems.
+external robot, simulation, or fabrication systems without making the core
+library depend on those systems.
 
 This document proposes a simplified extension architecture for two initial
 domains:
 
-- Robot and mechanism design, including URDF export and a JavaScript-native
-  Babylon.js simulation path.
+- Robot and mechanism definition, including URDF export and engine-neutral JSON
+  robot descriptions.
 - Circuits and boards, including PCB layout, electrical metadata, fabrication
   outputs, and mechanical integration with Solidark models.
 
@@ -31,8 +31,9 @@ External tools usually need more than a mesh:
 
 - Robot tools need links, joints, frames, collision geometry, visual geometry,
   inertial properties, sensors, actuators, and controllers.
-- Browser simulation engines need a scene graph, mesh assets, materials,
-  collision shapes, joints, constraints, and behavior metadata.
+- Simulation engines need a scene graph, mesh assets, materials, collision
+  shapes, joints, constraints, and behavior metadata. Solidark should provide
+  parseable robot data for those engines, not direct engine integrations.
 - Circuit and PCB tools need board outlines, layers, nets, footprints, pads,
   traces, vias, zones, drill data, assembly data, BOM data, and sometimes a 3D
   mechanical representation.
@@ -43,28 +44,28 @@ back to the same modeled object.
 
 ## Goals
 
-- Keep robot, robot-simulation, and circuit features in optional extension
-  packages.
+- Keep robot and circuit features in optional extension packages.
 - Preserve Solidark's plain JavaScript and Web Components authoring model.
 - Support fully declarative HTML authoring and class-based `Component` authoring.
 - Build a source-to-artifact correspondence model that can survive export.
 - Generate deterministic file bundles from a Solidark DOM tree.
-- Prefer JavaScript-native browser workflows when they are good enough.
+- Prefer JavaScript-friendly data handoff when browser workflows are useful.
 - Keep Node-only workflows possible when external fabrication tools or file
   writers are required.
 - Make all extension packages testable with ordinary `node:test` unit tests.
-- Avoid coupling the Solidark core to any one simulator, robot stack, PCB editor,
-  or fabrication vendor.
+- Avoid coupling the Solidark core to any one simulation engine, robot stack,
+  PCB editor, or fabrication vendor.
 
 ## Non-Goals
 
 - Solidark should not become a slicer.
 - Solidark should not become a full robot dynamics research simulator.
-- Solidark should not become a replacement for KiCad, Babylon.js, ROS, or board
-  fabrication software.
+- Solidark should not become a replacement for KiCad, ROS, simulation engines,
+  or board fabrication software.
 - Extensions should not require JSX, React, TypeScript-only APIs, or framework
   coupling.
 - Extensions should not put simulation behavior into the CAD kernel adapter.
+- Solidark should not depend on Babylon.js or any other simulation engine.
 - Circuit extensions should not make the core CAD model mesh-first or
   electronics-first.
 - Solidark should not add manufacturing-specific custom elements until a clear
@@ -75,23 +76,16 @@ back to the same modeled object.
 ### Optional Packages
 
 Each extension should be importable on demand. Importing `solidark` should not
-register robot, simulator, or circuit custom elements.
+register robot or circuit custom elements.
 
 Potential package families:
 
 - `@solidark/interop`: shared artifact, source-map, validation, and unit helpers.
-- `@solidark/robot`: umbrella robot package for users who want all official
-  robot extension features.
-- `@solidark/robot/definition`: robot links, joints, frames, URDF export, and
-  robot package manifests.
-- `@solidark/robot/simulation`: simulator-neutral robot simulation metadata.
-- `@solidark/robot/simulation/babylon`: Babylon.js scene export, runtime loader
-  helpers, and browser simulation support.
-- `@solidark/circuit`: circuit and board definition components.
-- `@solidark/circuit/kicad`: KiCad project, schematic, board, and footprint
-  exporters.
-- `@solidark/circuit/gerber`: Gerber, drill, pick-and-place, and fabrication
-  exporters.
+- `@solidark/robot`: robot links, joints, frames, physical metadata, URDF
+  export, JSON robot descriptions, and robot package manifests.
+- `@solidark/circuit`: circuit and board definition components, circuit IR,
+  fabrication outputs, KiCad export, Gerber export, and circuit package
+  manifests.
 
 The first implementation can start with fewer packages, but the boundaries
 should remain visible. A monolithic `@solidark/extensions` package would be
@@ -101,28 +95,26 @@ convenient for prototyping, but individual packages are better once APIs settle.
 
 The two main extension namespaces should be `robot` and `circuit`.
 
-The `robot` namespace should be split into:
+The `robot` namespace should be flat. It should cover robot structure, links,
+joints, frames, inertials, visuals, collisions, sensors, actuators, URDF export,
+JSON robot descriptions, and robot package manifests. Simulation engines should
+consume those exported definitions through project-owned loaders.
 
-- `robot/definition`: robot structure, links, joints, frames, inertials,
-  visuals, collisions, URDF export, and robot package manifests.
-- `robot/simulation`: simulator-neutral runtime metadata, controllers,
-  actuators, sensors, environments, simulation scenes, and target adapters such
-  as Babylon.js.
-
-The `circuit` namespace should cover circuit graphs, board layout, footprints,
-fabrication exports, assembly data, and mechanical board integration.
+The `circuit` namespace should be flat. It should cover circuit graphs, board
+layout, footprints, fabrication exports, assembly data, and mechanical board
+integration. Format-specific writers such as KiCad and Gerber should live under
+an internal `circuits/external` implementation directory, mirroring the way base
+Solidark keeps STEP, STL, and similar file-format concerns outside primitive
+modeling components.
 
 ### Component Namespacing
 
 Official Solidark extensions may keep the `sol-` prefix, but should include the
 domain segment:
 
-- Robot definition: `sol-robot`, `sol-robot-link`, `sol-robot-joint`,
-  `sol-robot-frame`, `sol-robot-visual`, `sol-robot-collision`,
-  `sol-robot-inertial`.
-- Robot simulation: `sol-robot-simulation`, `sol-robot-instance`,
-  `sol-robot-world`, `sol-robot-controller`, `sol-robot-actuator`,
-  `sol-robot-sensor`, `sol-robot-environment`.
+- Robot: `sol-robot`, `sol-robot-link`, `sol-robot-joint`, `sol-robot-frame`,
+  `sol-robot-visual`, `sol-robot-collision`, `sol-robot-inertial`,
+  `sol-robot-actuator`, `sol-robot-sensor`.
 - Circuit: `sol-circuit-board`, `sol-circuit-part`, `sol-circuit-net`,
   `sol-circuit-pad`, `sol-circuit-trace`, `sol-circuit-via`,
   `sol-circuit-zone`.
@@ -132,15 +124,14 @@ Third-party extensions should use their own custom element prefixes.
 Expected imports:
 
 ```js
-import '@solidark/robot/definition'
-import '@solidark/robot/simulation/babylon'
+import '@solidark/robot'
 import '@solidark/circuit'
 ```
 
 ### Geometry Is Not Enough
 
 Extension components may produce no geometry. A joint, net, trace constraint,
-component pin, or simulation actuator is semantic data. These components should
+component pin, actuator, or sensor is semantic data. These components should
 still inherit from Solidark's `Component` so they participate in lifecycle,
 normalization, diagnostics, and declarative composition.
 
@@ -202,10 +193,8 @@ consumers can write files to disk.
 Each domain should compile to a domain-specific intermediate representation
 before writing files:
 
-- Robot definition IR: robots, links, joints, frames, visuals, collisions,
-  inertials, and URDF metadata.
-- Robot simulation IR: scene nodes, mesh assets, materials, collision shapes,
-  constraints, motors, sensors, controllers, and update hooks.
+- Robot IR: robots, links, joints, frames, visuals, collisions, inertials,
+  sensors, actuators, mesh assets, URDF metadata, and JSON export metadata.
 - Circuit IR: boards, stackups, nets, footprints, pads, traces, vias, zones,
   cutouts, BOM entries, and assembly placements.
 
@@ -263,48 +252,23 @@ Open questions:
 ### Purpose
 
 The robot extension should let users define robots, mechanisms, frames, and
-simulation-ready assemblies around Solidark geometry. It should be organized
-around two sub-namespaces:
+simulation-ready assemblies around Solidark geometry. It should generate
+accurate robot definition data that downstream tools can parse. It should not
+own a simulation engine, application loop, controller runtime, or Babylon.js
+loader.
 
-- `robot/definition`: source-of-truth robot structure and interchange.
-- `robot/simulation`: JavaScript-native simulation handoff and runtime helpers.
+The first robot exports should be:
 
-The definition namespace should export URDF first because URDF is widely used in
-robot tooling and can also serve as an interchange format for external
-simulators.
+- URDF for interoperability with existing robot tooling.
+- A Solidark robot JSON format that is simple for Babylon.js, Three.js, Webots
+  import scripts, or custom JavaScript simulations to parse.
 
-No dedicated Webots extension is planned for the first iteration. If Webots is
-needed later, it can consume URDF exports or be added as a thin adapter after
-the URDF exporter is stable.
+The robot JSON export should be the preferred JavaScript-facing handoff. A
+simulation project can implement a small loader that maps the JSON links,
+joints, meshes, inertials, sensors, and actuators into whatever runtime objects
+that engine expects.
 
-### Babylon.js as the First Simulation Target
-
-Babylon.js is a reasonable first simulation target for Solidark because it keeps
-the workflow in JavaScript and web technologies. It provides a complete browser
-scene graph, GLB loading, picking, materials, cameras, and Havok-backed physics.
-That makes it a good fit for:
-
-- Visual robot simulation in the browser.
-- Mechanism playback and debugging.
-- Kinematic previews.
-- Constraint-based prototypes.
-- Educational and design-review workflows.
-- Robots whose behavior can be represented well enough with real-time rigid
-  body physics.
-
-Legged mechanisms and five-bar robots are plausible Babylon.js targets for early
-Solidark work, especially if Solidark owns the kinematic graph and uses Babylon
-for visualization, collision, constraints, and interactive testing.
-
-The limitation is important: Babylon.js is a game and real-time 3D engine, not a
-robotics-grade dynamics simulator. It should not be treated as the final answer
-for high-fidelity actuator modeling, contact-rich locomotion research,
-controller validation, terrain interaction, or hardware-certification physics.
-For Solidark's near-term purpose, that is acceptable. The first goal is useful,
-testable, browser-native mechanism simulation, not replacing specialized
-robotics simulators.
-
-### Definition Namespace Components
+### Robot Components
 
 ```html
 <sol-robot name="pan-tilt">
@@ -348,6 +312,9 @@ Components:
 - `sol-robot-collision`: collision geometry subtree.
 - `sol-robot-inertial`: mass, center of mass, and inertia tensor.
 - `sol-robot-limit`: joint limits if separate from the joint component.
+- `sol-robot-actuator`: motors, servos, or other joint drivers as metadata.
+- `sol-robot-sensor`: camera, lidar, imu, force, distance, or contact sensors as
+  metadata.
 
 ### URDF Export
 
@@ -374,76 +341,95 @@ Exporter rules:
 - Report missing inertial properties but allow visual-only export for early
   prototypes.
 
-### Simulation Namespace Components
+### JSON Robot Export
 
-```html
-<sol-robot-simulation target="babylon" mode="kinematic">
-  <sol-robot-instance robot="five-bar"></sol-robot-instance>
-  <sol-robot-world gravity="0 0 -9.81"></sol-robot-world>
-  <sol-robot-controller module="./controllers/five-bar.js"></sol-robot-controller>
-  <sol-robot-actuator joint="left_crank" kind="motor"></sol-robot-actuator>
-  <sol-robot-actuator joint="right_crank" kind="motor"></sol-robot-actuator>
-</sol-robot-simulation>
+The robot JSON exporter should produce an engine-neutral description of the same
+robot data used for URDF export. It should favor simple, explicit structures over
+clever abstractions.
+
+Example shape:
+
+```json
+{
+  "schema": "solidark.robot.v1",
+  "name": "gantry",
+  "unit": "m",
+  "links": [
+    {
+      "name": "base",
+      "visuals": [{ "mesh": "meshes/base.glb" }],
+      "collisions": [{ "mesh": "meshes/base-collision.glb" }],
+      "inertial": { "mass": 2.4, "centerOfMass": [0, 0, 0] }
+    }
+  ],
+  "joints": [
+    {
+      "name": "x_axis",
+      "type": "prismatic",
+      "parent": "base",
+      "child": "x_carriage",
+      "axis": [1, 0, 0],
+      "limits": { "lower": 0, "upper": 0.3 }
+    }
+  ],
+  "actuators": [
+    {
+      "name": "x_motor",
+      "joint": "x_axis",
+      "kind": "linear-motor"
+    }
+  ]
+}
 ```
 
-Components:
+Exporter rules:
 
-- `sol-robot-simulation`: simulation scenario root.
-- `sol-robot-instance`: a named robot definition placed into a scenario.
-- `sol-robot-world`: gravity, ground, lighting, and world-scale metadata.
-- `sol-robot-controller`: declarative controller metadata or JavaScript module
-  references.
-- `sol-robot-actuator`: motors, servos, or other joint drivers.
-- `sol-robot-sensor`: camera, lidar, imu, force, distance, or contact sensors.
-- `sol-robot-environment`: terrain, obstacles, and test fixtures.
+- Convert Solidark millimeters to meters by default so the JSON aligns with
+  URDF and common physics engines.
+- Preserve source ids and component paths for every exported link, joint, mesh,
+  actuator, and sensor.
+- Include mesh asset paths rather than embedding binary mesh data.
+- Keep behavior out of the export. A simulation project may attach controllers,
+  input handling, physics constraints, or animation loops after loading the
+  robot definition.
+- Make the format stable enough to test with plain JSON assertions.
 
-### Babylon.js Handoff
+### Simulation Project Workflow
 
-Babylon.js integration should focus on browser simulation and visualization, not
-CAD editing.
+A Babylon.js project, Webots import script, or custom simulation can consume the
+robot export without Solidark depending on that runtime:
 
-Initial export should generate:
+```js
+import robot from './dist/gantry.robot.json' with { type: 'json' }
+import { loadRobotIntoScene } from './simulation/load-robot-into-scene.js'
 
-- GLB mesh assets.
-- A JSON scene descriptor with Solidark source ids, robot links, joints,
-  materials, inertials, collision shapes, sensors, and actuators.
-- A loader helper that creates Babylon.js meshes, transform nodes, physics
-  bodies, and constraints.
+const gantry = await loadRobotIntoScene(scene, robot)
 
-Solidark should use GLB as the primary geometry handoff and keep robot semantics
-in a companion JSON document unless a glTF extension is justified later.
+scene.onBeforeRenderObservable.add(() => {
+  gantry.joints.x_axis.setPosition(currentPosition)
+})
+```
 
-The Babylon adapter should support two modes:
-
-- Kinematic mode: Solidark controls joint transforms directly. This is the best
-  first target for five-bar mechanisms and deterministic mechanism playback.
-- Physics mode: Babylon/Havok manages rigid bodies and constraints. This is
-  useful for collision, falling, contact experiments, and interactive tests, but
-  may need tuning for complex legged robots.
+The loader belongs to the simulation project because it knows the engine, scene,
+physics plugin, controller style, UI, and performance constraints. Solidark's job
+is to make the robot definition accurate, complete, deterministic, and easy to
+parse.
 
 ### Robot Validation
 
-The robot definition compiler should report:
+The robot compiler should report:
 
 - Duplicate link, joint, or frame names.
 - Missing joint parents or children.
 - Cycles in the link-joint graph.
 - Geometry assigned directly to `sol-robot` without a link.
-- Links with visual geometry but no collision geometry when a simulation export
-  requires collision.
+- Links with visual geometry but no collision geometry when the selected export
+  target requires collision.
 - Missing mass or inertia when dynamics export is requested.
 - Unit conversion and axis conversion assumptions.
 - Meshes that are too detailed for collision use.
-
-The robot simulation compiler should report:
-
-- Duplicate sensor, actuator, controller, or environment names.
-- Controllers that target missing joints or links.
 - Actuators attached to unsupported joint types.
 - Sensors attached to missing links or frames.
-- Simulation modes that the selected target cannot support.
-- Meshes that are too detailed for real-time collision use.
-- Unsupported joint types for the selected simulation target.
 
 ### Open Questions
 
@@ -451,10 +437,9 @@ The robot simulation compiler should report:
   first, or both?
 - Should collision simplification be implemented in Solidark or delegated to
   external mesh tooling?
-- Should the robot definition namespace include Xacro generation, or should plain
-  URDF come first?
-- How should sensors and actuators be represented before a specific simulator
-  target is selected?
+- Should the robot package include Xacro generation, or should plain URDF come
+  first?
+- How detailed should sensors and actuators be in the first JSON schema?
 - Should five-bar robots and legged mechanisms be modeled through generic joints
   only, or should Solidark provide higher-level mechanism components later?
 
@@ -578,6 +563,8 @@ KiCad exports should be a high-priority target:
 
 KiCad uses documented S-expression formats for schematic and board files, which
 makes it a practical review and editing target once the circuit IR is stable.
+These writers should remain implementation modules under a circuit
+`circuits/external` directory rather than becoming separate public namespaces.
 
 Later exports:
 
@@ -666,7 +653,7 @@ This raises integration requirements:
 - A board can be a physical object in a robot link.
 - A connector can be both a circuit footprint and a robot/electromechanical
   interface.
-- A motor can have CAD geometry, electrical pins, a URDF joint, and simulation
+- A motor can have CAD geometry, electrical pins, a URDF joint, and robot
   actuator metadata.
 - A source map must allow one component to contribute to several external files.
 - Units and coordinate frames must be explicit at every domain boundary.
@@ -688,11 +675,11 @@ Exit criteria:
 - Generated files include source-map metadata.
 - The extension runtime works in browser-like tests and Node tests.
 
-### Phase 1: Robot Definition and URDF Export
+### Phase 1: Robot Definition Export
 
 - Implement robot definition components for robot, link, joint, visual,
-  collision, and inertial metadata.
-- Generate URDF and mesh assets.
+  collision, inertial, actuator, and sensor metadata.
+- Generate URDF, robot JSON, and mesh assets.
 - Validate link-joint graph structure.
 - Convert units and angles explicitly.
 - Add sample robots to the showcase.
@@ -700,26 +687,12 @@ Exit criteria:
 Exit criteria:
 
 - A two-link revolute mechanism exports to URDF.
+- The same mechanism exports to deterministic robot JSON.
 - Visual and collision geometry are exported separately.
-- Source map entries connect Solidark components to URDF links and joints.
+- Source map entries connect Solidark components to URDF and JSON links, joints,
+  mesh assets, actuators, and sensors.
 
-### Phase 2: Robot Simulation with Babylon.js
-
-- Implement robot simulation components for simulation scenarios, worlds,
-  controllers, actuators, sensors, and environments.
-- Add Babylon.js scene descriptor and loader helper.
-- Preserve source ids in GLB node names or companion metadata.
-- Support kinematic joint playback first.
-- Add optional Babylon/Havok physics bodies and constraints.
-- Add a browser showcase for a simple five-bar mechanism or leg module.
-
-Exit criteria:
-
-- A Solidark robot can be loaded into a Babylon.js scene with link metadata.
-- A simple mechanism can be animated through declarative joint definitions.
-- Physics mode can be enabled for a small rigid-body example.
-
-### Phase 3: Circuit IR and Board Preview
+### Phase 2: Circuit IR and Board Preview
 
 - Implement circuit component classes.
 - Compile circuit DOM trees into a deterministic circuit IR.
@@ -732,11 +705,12 @@ Exit criteria:
 - A simple two-layer board with parts, nets, and manual traces can be compiled.
 - The board has both a circuit IR and a 3D Solidark preview model.
 
-### Phase 4: Circuit Fabrication and KiCad Export
+### Phase 3: Circuit External Export
 
 - Generate Gerber layer files and drill files.
 - Generate BOM and pick-and-place files.
 - Generate KiCad board/project files from circuit IR.
+- Keep format writers under a `circuits/external` implementation directory.
 - Add board export examples to the showcase.
 
 Exit criteria:
@@ -745,7 +719,7 @@ Exit criteria:
 - A fabrication archive can be produced with Gerber, drill, BOM, and placement
   outputs.
 
-### Phase 5: Cross-Domain Workflows
+### Phase 4: Cross-Domain Workflows
 
 - Allow circuit boards to mount into robot links or mechanical assemblies.
 - Add connector, motor, sensor, and mounting-hole correspondence helpers.
@@ -755,7 +729,7 @@ Exit criteria:
 Exit criteria:
 
 - One source tree can generate mechanical preview assets, circuit fabrication
-  files, and robot simulation files with shared source mapping.
+  files, and robot definition files with shared source mapping.
 
 ## Testing Strategy
 
@@ -778,10 +752,11 @@ be covered by command construction tests and small opt-in integration tests.
 
 ## Risks
 
-- Babylon.js is a strong browser simulation target, but it is not a specialized
-  robot simulator. Simulation claims should be scoped to what can be validated.
 - Unit mismatches are likely across CAD, URDF, circuit formats, and simulation
   engines. Every exporter must state its unit conversions.
+- Simulation projects may need engine-specific interpretation of joints,
+  constraints, sensors, and actuators. Solidark should keep its robot JSON
+  explicit and versioned so those loaders stay simple.
 - Mesh handoff can lose B-Rep precision. CAD source should remain authoritative.
 - Circuit design is its own domain. The extension should avoid overpromising
   autorouting and focus first on deterministic data structures and exports.
@@ -797,9 +772,6 @@ be covered by command construction tests and small opt-in integration tests.
   https://docs.tscircuit.com/
 - ROS URDF is the primary initial robot interchange target:
   https://docs.ros.org/en/kilted/Tutorials/Intermediate/URDF/URDF-Main.html
-- Babylon.js supports browser 3D scenes, GLB import, picking, materials,
-  cameras, and Havok-backed physics:
-  https://www.babylonjs.com/specifications/
 - Gerber is the primary PCB fabrication data transfer target:
   https://www.ucamco.com/en/gerber
 - KiCad's documented S-expression board and schematic formats make it a strong
