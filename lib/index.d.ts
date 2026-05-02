@@ -143,6 +143,8 @@ export abstract class Kernel {
     entry: KernelShape,
     options?: Record<string, unknown>
   ): RenderableMesh | RenderableMesh[] | null | undefined;
+  toStep(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array | null;
+  toStl(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array | null;
   dispose(entry: KernelShape): void;
   abstract cuboid: KernelMethod;
   abstract sphere: KernelMethod;
@@ -233,6 +235,8 @@ export class MemoryKernel extends Kernel {
 export class OpencascadeKernel extends MemoryKernel {
   openCascade: unknown;
   constructor(openCascade: unknown);
+  toStep(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array;
+  toStl(entry: KernelShape, options?: Record<string, unknown>): string | Uint8Array;
 }
 
 export class SolidarkEvaluationError extends Error {
@@ -291,6 +295,8 @@ export function parseVector(value: string | number[] | { x?: number; y?: number;
 export function parseAttributeValue(value: string): boolean | number | number[] | string;
 export function stableStringify(value: unknown): string;
 export const GLB_MIME_TYPE: "model/gltf-binary";
+export const STEP_MIME_TYPE: "model/step";
+export const STL_MIME_TYPE: "model/stl";
 export function exportMeshesToGlb(meshes?: RenderableMesh[], options?: { generator?: string }): ArrayBuffer;
 export function createGlbBlob(meshes?: RenderableMesh[], options?: { generator?: string }): Blob;
 export function createGlbObjectUrl(
@@ -298,6 +304,14 @@ export function createGlbObjectUrl(
   options?: { generator?: string },
   url?: { createObjectURL?: (blob: Blob) => string }
 ): GlbObjectUrl;
+export function exportShapeToStep(
+  entry: KernelShape,
+  options?: Record<string, unknown> & { kernel?: { toStep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
+): string | Uint8Array;
+export function exportShapeToStl(
+  entry: KernelShape,
+  options?: Record<string, unknown> & { kernel?: { toStl?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
+): string | Uint8Array;
 
 declare global {
   var kernel: unknown;
