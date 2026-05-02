@@ -34,6 +34,11 @@
     "./opencascade": "./lib/runtime/kernel/opencascade.js",
     "./primitives": "./lib/primitives/index.js",
     "./primitives/*": "./lib/primitives/*/*.js",
+    "./robot": {
+      "types": "./lib/robot/index.d.ts",
+      "default": "./lib/robot/index.js"
+    },
+    "./robot/*": "./lib/robot/*.js",
     "./runtime": "./lib/runtime/index.js",
     "./runtime/evaluate": "./lib/runtime/evaluate.js",
     "./runtime/kernel": "./lib/runtime/kernel/index.js",
@@ -76,6 +81,7 @@
     "three": "0.172.0"
   },
   "devDependencies": {
+    "@babylonjs/core": "^9.5.0",
     "standard": "^17.1.0"
   },
   "license": "MIT"

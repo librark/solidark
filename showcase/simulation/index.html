@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Simulation Showcase</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js",
+          "three": "/node_modules/three/build/three.module.js"
+        }
+      }
+    </script>
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        background: #111827;
+        color: #e5e7eb;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      body {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #334155;
+        background: #0f172a;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 650;
+      }
+
+      [data-status] {
+        font-size: 13px;
+        color: #93c5fd;
+      }
+
+      .simulation-shell {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(260px, 0.78fr) minmax(360px, 1.2fr) minmax(320px, 1fr);
+      }
+
+      .panel {
+        min-width: 0;
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        border-right: 1px solid #334155;
+        background: #111827;
+      }
+
+      .panel:last-child {
+        border-right: 0;
+      }
+
+      .panel header {
+        padding: 10px 12px;
+        border-bottom: 1px solid #334155;
+        background: #111827;
+      }
+
+      .panel h2 {
+        margin: 0;
+        color: #cbd5e1;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .robot-json {
+        margin: 0;
+        overflow: auto;
+        padding: 12px;
+        background: #020617;
+        color: #dbeafe;
+        font: 12px/1.45 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+
+      sol-viewer {
+        display: block;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      .solidark-cad-viewer {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+        background: #0f172a;
+      }
+
+      .solidark-cad-toolbar {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 6px;
+        border-bottom: 1px solid #334155;
+        background: #020617;
+        overflow-x: auto;
+      }
+
+      .solidark-cad-button {
+        flex: 0 0 auto;
+        min-width: 34px;
+        height: 26px;
+        border: 1px solid #475569;
+        background: #1e293b;
+        color: #e2e8f0;
+        font-size: 11px;
+      }
+
+      .solidark-cad-viewport {
+        position: absolute;
+        inset: 39px 0 0;
+      }
+
+      .solidark-cad-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .solidark-cad-axis-legend {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        display: flex;
+        gap: 6px;
+      }
+
+      .solidark-cad-axis-label {
+        width: 22px;
+        height: 22px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--solidark-axis-color);
+        color: var(--solidark-axis-color);
+        background: rgb(2 6 23 / 76%);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      @media (max-width: 960px) {
+        .simulation-shell {
+          grid-template-columns: 1fr;
+          grid-template-rows: 260px 420px 420px;
+        }
+
+        .panel {
+          border-right: 0;
+          border-bottom: 1px solid #334155;
+        }
+      }
+    </style>
+  </head>
+  <body data-solidark-simulation>
+    <header>
+      <h1>Five-Bar Robot Simulation</h1>
+      <span data-status>Loading</span>
+    </header>
+
+    <main class="simulation-shell">
+      <section class="panel definition-panel" aria-label="Generated robot definition">
+        <header>
+          <h2>Robot JSON</h2>
+        </header>
+        <pre class="robot-json"><code data-robot-json></code></pre>
+      </section>
+
+      <section class="panel simulation-panel" aria-label="Babylon.js simulation">
+        <header>
+          <h2>Babylon.js Simulation</h2>
+        </header>
+        <canvas id="simulation-canvas"></canvas>
+      </section>
+
+      <section class="panel viewer-panel" aria-label="Solidark CAD geometry">
+        <header>
+          <h2>Solidark Geometry</h2>
+        </header>
+        <sol-viewer data-robot-viewer view="top" grid-size="250"></sol-viewer>
+      </section>
+    </main>
+
+    <sol-model id="five-bar-geometry" hidden></sol-model>
+
+    <sol-robot name="five-bar" hidden>
+      <sol-robot-link name="base">
+        <sol-robot-visual>
+          <sol-cuboid size="1800 80 80"></sol-cuboid>
+        </sol-robot-visual>
+        <sol-robot-inertial mass="2"></sol-robot-inertial>
+      </sol-robot-link>
+
+      <sol-robot-link name="left_crank">
+        <sol-robot-visual>
+          <sol-cuboid size="650 60 60"></sol-cuboid>
+        </sol-robot-visual>
+        <sol-robot-inertial mass="0.2"></sol-robot-inertial>
+      </sol-robot-link>
+
+      <sol-robot-link name="right_crank">
+        <sol-robot-visual>
+          <sol-cuboid size="650 60 60"></sol-cuboid>
+        </sol-robot-visual>
+        <sol-robot-inertial mass="0.2"></sol-robot-inertial>
+      </sol-robot-link>
+
+      <sol-robot-link name="left_coupler">
+        <sol-robot-visual>
+          <sol-cuboid size="1100 50 50"></sol-cuboid>
+        </sol-robot-visual>
+        <sol-robot-inertial mass="0.18"></sol-robot-inertial>
+      </sol-robot-link>
+
+      <sol-robot-link name="right_coupler">
+        <sol-robot-visual>
+          <sol-cuboid size="1100 50 50"></sol-cuboid>
+        </sol-robot-visual>
+        <sol-robot-inertial mass="0.18"></sol-robot-inertial>
+      </sol-robot-link>
+
+      <sol-robot-link name="end_effector">
+        <sol-robot-visual>
+          <sol-sphere radius="80"></sol-sphere>
+        </sol-robot-visual>
+        <sol-robot-inertial mass="0.12"></sol-robot-inertial>
+      </sol-robot-link>
+
+      <sol-robot-joint name="left_motor" type="revolute" parent="base" child="left_crank" origin="-900 0 0" axis="0 0 1"></sol-robot-joint>
+      <sol-robot-joint name="right_motor" type="revolute" parent="base" child="right_crank" origin="900 0 0" axis="0 0 1"></sol-robot-joint>
+      <sol-robot-actuator name="left_motor_drive" joint="left_motor" kind="servo"></sol-robot-actuator>
+      <sol-robot-actuator name="right_motor_drive" joint="right_motor" kind="servo"></sol-robot-actuator>
+    </sol-robot>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
