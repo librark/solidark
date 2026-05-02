@@ -9,6 +9,7 @@ import {
   createFiveBarRuntime,
   createFiveBarState,
   enableSimulationPhysics,
+  FiveBarKinematicsError,
   loadSolidarkElements,
   renderActuatorControls,
   renderRobotJson
@@ -29,7 +30,36 @@ it('createFiveBarState creates deterministic link transforms', () => {
   assert.equal(state.links.end_effector.position[0], 0)
   assert.equal(state.joints.left_motor, 0.9)
   assert.equal(state.joints.right_motor, Math.PI - 0.9)
-  assert.deepEqual(createFiveBarState({ left_motor: 0.9 }, { baseWidth: 0, rightJoint: 'left_motor' }).links.end_effector.position, [-0.11047864288515659, 1.591030324492499, 0])
+  assertNearlyEqual(state.links.left_coupler.length, 0.950488)
+  assertNearlyEqual(state.links.right_coupler.length, 0.950488)
+  assert.equal(createFiveBarState({
+    left_motor: 0,
+    right_motor: Math.PI
+  }, {
+    baseWidth: 2,
+    couplerLength: 0.8,
+    crankLength: 0.5,
+    robot: openLimitRobot({
+      joints: [
+        { name: 'left_motor', origin: [0, 0, 0] },
+        { name: 'right_motor', origin: [0, 0, 0] }
+      ]
+    })
+  }).links.base.length, 0)
+})
+
+it('createFiveBarState rejects poses that would stretch links or hit singularities', () => {
+  const robot = openLimitRobot()
+
+  assert.equal(FiveBarKinematicsError.prototype instanceof RangeError, true)
+  assert.throws(
+    () => createFiveBarState({ left_motor: 0, right_motor: 0 }, { baseWidth: 2, couplerLength: 0.8, crankLength: 0.5, robot }),
+    (error) => error.name === 'FiveBarKinematicsError' && error.code === 'unreachable'
+  )
+  assert.throws(
+    () => createFiveBarState({ left_motor: 0, right_motor: Math.PI }, { baseWidth: 2, couplerLength: 0.5, crankLength: 0.5, robot }),
+    (error) => error.name === 'FiveBarKinematicsError' && error.code === 'singularity'
+  )
 })
 
 it('createFiveBarRuntime delegates link creation and updates', () => {
@@ -66,6 +96,51 @@ it('createFiveBarRuntime delegates link creation and updates', () => {
   assert.equal(limited, 1.4)
   assert.equal(adjusted, 0.8999999999999999)
   assert.equal(runtime.controls.left_motor, 0.8999999999999999)
+})
+
+it('createFiveBarRuntime blocks invalid actuator commands before applying them', () => {
+  const updated = []
+  const robot = {
+    links: [
+      { name: 'base' },
+      { name: 'left_crank' },
+      { name: 'right_crank' },
+      { name: 'left_coupler' },
+      { name: 'right_coupler' },
+      { name: 'end_effector' }
+    ],
+    actuators: [{
+      name: 'left_motor_drive',
+      joint: 'left_motor',
+      limits: { lower: -Math.PI, upper: Math.PI },
+      initial: 0.9
+    }, {
+      name: 'right_motor_drive',
+      joint: 'right_motor',
+      limits: { lower: -Math.PI, upper: Math.PI },
+      initial: Math.PI - 0.9
+    }]
+  }
+  const runtime = createFiveBarRuntime(robot, {
+    createLink (link) {
+      return { name: link.name }
+    },
+    updateLink (link, transform) {
+      updated.push([link.name, transform.length])
+    }
+  }, { baseWidth: 2, couplerLength: 0.8, crankLength: 0.5 })
+  const previousRight = runtime.controls.right_motor
+
+  assert.equal(runtime.setActuator('left_motor_drive', 0), 0)
+  assert.equal(runtime.setActuator('right_motor_drive', 0), previousRight)
+  assert.equal(runtime.controls.right_motor, previousRight)
+  assert.equal(runtime.blocked.code, 'singularity')
+  assert.equal(runtime.update().joints.right_motor, previousRight)
+  assert.equal(updated.length, 6)
+  runtime.controls.right_motor = 0
+  assert.equal(runtime.update().joints.right_motor, previousRight)
+  assert.equal(runtime.blocked.code, 'singularity')
+  assert.equal(updated.length, 6)
 })
 
 it('createFiveBarState derives kinematics from robot geometry and actuator metadata', () => {
@@ -122,7 +197,7 @@ it('createFiveBarState derives kinematics from robot geometry and actuator metad
   assert.equal(createFiveBarRuntime({
     links: [],
     joints: [],
-    actuators: [{ name: 'left_motor_drive', joint: 'left_motor', limits: {} }]
+    actuators: [{ name: 'left_motor_drive', joint: 'left_motor', limits: {}, initial: 0.9 }]
   }, {
     createLink (link) {
       return { name: link.name }
@@ -132,7 +207,7 @@ it('createFiveBarState derives kinematics from robot geometry and actuator metad
   assert.equal(createFiveBarRuntime({
     links: [],
     joints: [],
-    actuators: [{ name: 'right_motor_drive', joint: 'right_motor', limits: {} }]
+    actuators: [{ name: 'right_motor_drive', joint: 'right_motor', limits: {}, initial: Math.PI - 0.9 }]
   }, {
     createLink (link) {
       return { name: link.name }
@@ -456,13 +531,15 @@ it('createBabylonFactory maps robot links to Babylon-like meshes', () => {
   assert.equal(Math.round(sphereMesh.material.diffuseColor.b * 1000) / 1000, 0.937)
   assert.equal(sphereMesh.scaling.x, undefined)
   assert.equal(externalMesh.position.x, 7)
-  assert.equal(externalMesh.scaling.x, 0.25)
   assert.equal(sphereMesh.position.x, 4)
   assert.equal(mesh.position.x, 1)
   assert.equal(mesh.position.y, 2)
   assert.equal(mesh.position.z, 3)
   assert.equal(mesh.rotation.z, 0.5)
-  assert.equal(mesh.scaling.x, 0.75)
+  assert.equal(mesh.scaling.x, 1)
+  assert.equal(mesh.scaling.y, 1)
+  assert.equal(mesh.scaling.z, 1)
+  assert.equal(externalMesh.scaling.x, undefined)
   assert.deepEqual(quaternionMesh.rotationQuaternion, { x: 0, y: 0, z: 0.75 })
 })
 
@@ -835,4 +912,25 @@ function fakeElement (tag) {
 
 function throwValue (value) {
   throw value
+}
+
+function assertNearlyEqual (actual, expected, tolerance = 1e-9) {
+  assert.equal(Math.abs(actual - expected) <= tolerance, true)
+}
+
+function openLimitRobot (overrides = {}) {
+  return {
+    links: [],
+    joints: [],
+    actuators: [{
+      name: 'left_motor_drive',
+      joint: 'left_motor',
+      limits: { lower: -Math.PI, upper: Math.PI }
+    }, {
+      name: 'right_motor_drive',
+      joint: 'right_motor',
+      limits: { lower: -Math.PI, upper: Math.PI }
+    }],
+    ...overrides
+  }
 }

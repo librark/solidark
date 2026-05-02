@@ -239,6 +239,20 @@ physics plugin, controller style, UI, and performance constraints. Solidark's jo
 is to make the robot definition accurate, complete, deterministic, and easy to
 parse.
 
+Simulation loaders should preserve authored link dimensions as mechanical
+constraints. A runtime may reject or block a requested actuator command when it
+would make a closed-chain mechanism unreachable or singular; it should not
+stretch links to satisfy an impossible pose.
+
+For kinematic loaders, joint origins and primitive dimensions should be treated
+as authoritative. In practice, this means dimensions such as motor spacing,
+crank length, coupler length, and end-effector radius should be derived from
+`sol-robot-joint` origins and `sol-robot-collision` primitives, falling back to
+`sol-robot-visual` primitives only when collision geometry is absent. Nested
+Solidark transforms inside visual or collision geometry may still describe CAD
+preview placement, but a kinematic loader should not need to parse those
+transforms to recover link lengths.
+
 ## Validation
 
 The robot compiler should report:

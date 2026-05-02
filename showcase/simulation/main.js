@@ -42,6 +42,16 @@ const defaultFiveBar = Object.freeze({
 })
 
 const actuatorStep = Math.PI / 180 * 5
+const kinematicTolerance = 1e-8
+
+export class FiveBarKinematicsError extends RangeError {
+  constructor (code, message, details) {
+    super(message)
+    this.name = 'FiveBarKinematicsError'
+    this.code = code
+    this.details = details
+  }
+}
 
 export function createFiveBarState (actuators = {}, options = {}) {
   const config = fiveBarConfiguration(options.robot, options)
@@ -86,9 +96,11 @@ export function createFiveBarRuntime (robot, factory, options = {}) {
   const controls = Object.fromEntries(
     actuators.map((actuator) => [actuator.joint, actuator.value])
   )
+  let currentState = createFiveBarState(controls, { ...options, robot })
 
   return {
     actuators,
+    blocked: null,
     controls,
     links,
     robot,
@@ -100,19 +112,36 @@ export function createFiveBarRuntime (robot, factory, options = {}) {
     setActuator (name, value) {
       const actuator = actuatorByName.get(name)
       const limited = clamp(value, actuator.lower, actuator.upper)
+      const nextControls = { ...controls, [actuator.joint]: limited }
+      const result = tryFiveBarState(nextControls, { ...options, robot })
+
+      if (result.blocked) {
+        this.blocked = result.blocked
+        return actuator.value
+      }
 
       actuator.value = limited
       controls[actuator.joint] = limited
+      currentState = result.state
+      this.blocked = null
       return limited
     },
     update () {
-      const state = createFiveBarState(controls, { ...options, robot })
+      const result = tryFiveBarState(controls, { ...options, robot })
 
-      for (const [name, transform] of Object.entries(state.links)) {
+      if (result.blocked) {
+        this.blocked = result.blocked
+        return currentState
+      }
+
+      currentState = result.state
+      this.blocked = null
+
+      for (const [name, transform] of Object.entries(currentState.links)) {
         factory.updateLink(links[name], transform)
       }
 
-      return state
+      return currentState
     }
   }
 }
@@ -149,8 +178,10 @@ export function createBabylonFactory (BABYLON, scene, options = {}) {
         mesh.rotation.z = transform.rotation
       }
 
-      if (mesh.metadata?.solidarkSimulation?.kind !== 'sphere') {
-        mesh.scaling.x = transform.length / (mesh.metadata?.solidarkSimulation?.length || 1)
+      if (mesh.metadata?.solidarkSimulation?.kind === 'box') {
+        mesh.scaling.x = 1
+        mesh.scaling.y = 1
+        mesh.scaling.z = 1
       }
 
       mesh.physicsImpostor?.forceUpdate?.()
@@ -342,12 +373,17 @@ function linkDescriptor (links, name) {
 
 function createActuatorControls (robot, config) {
   const joints = new Map((robot?.joints || []).map((joint) => [joint.name, joint]))
-  const actuators = robot?.actuators?.length
-    ? robot.actuators
-    : [
-        { name: 'left_motor_drive', joint: config.leftJoint },
-        { name: 'right_motor_drive', joint: config.rightJoint }
-      ]
+  const definedActuators = robot?.actuators || []
+  const fallbackActuators = [
+    { name: 'left_motor_drive', joint: config.leftJoint },
+    { name: 'right_motor_drive', joint: config.rightJoint }
+  ]
+  const actuators = [
+    ...definedActuators,
+    ...fallbackActuators.filter((fallback) => {
+      return !definedActuators.some((actuator) => actuator.joint === fallback.joint)
+    })
+  ]
 
   return actuators.map((actuator) => {
     const joint = joints.get(actuator.joint)
@@ -396,9 +432,18 @@ function circleIntersection (left, leftRadius, right, rightRadius) {
   const dx = right[0] - left[0]
   const dy = right[1] - left[1]
   const d = Math.sqrt(dx * dx + dy * dy)
+  const lowerReach = Math.abs(leftRadius - rightRadius)
+  const upperReach = leftRadius + rightRadius
+  const reachMargin = Math.min(d - lowerReach, upperReach - d)
 
-  if (d === 0) {
-    return [left[0], left[1] + leftRadius, left[2]]
+  if (reachMargin <= kinematicTolerance) {
+    const code = reachMargin < -kinematicTolerance ? 'unreachable' : 'singularity'
+
+    throw new FiveBarKinematicsError(
+      code,
+      `Five-bar pose is ${code}; link lengths would not be preserved.`,
+      { distance: d, lowerReach, upperReach }
+    )
   }
 
   const x = (leftRadius * leftRadius - rightRadius * rightRadius + d * d) / (2 * d)
@@ -432,6 +477,23 @@ function segmentTransform (start, end) {
 
 function distance (start, end) {
   return segmentTransform(start, end).length
+}
+
+function tryFiveBarState (actuators, options) {
+  try {
+    return {
+      blocked: null,
+      state: createFiveBarState(actuators, options)
+    }
+  } catch (error) {
+    return {
+      blocked: {
+        code: error.code,
+        message: error.message
+      },
+      state: null
+    }
+  }
 }
 
 function clamp (value, lower, upper) {
