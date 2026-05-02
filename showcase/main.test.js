@@ -6,6 +6,7 @@ import {
   bootShowcase,
   configureShowcaseKernel,
   createModelButton,
+  exportFilename,
   formatEvaluationError,
   createOpenCascadeInitOptions,
   createShowcaseApp,
@@ -27,7 +28,10 @@ function createDocumentStub () {
     ['[data-details]', createElementStub('pre')],
     ['[data-source-code]', createElementStub('code')],
     ['[data-source-path]', createElementStub('span')],
-    ['[data-viewer]', createElementStub('sol-viewer')]
+    ['[data-viewer]', createElementStub('sol-viewer')],
+    ['[data-export-brep]', createElementStub('button')],
+    ['[data-export-step]', createElementStub('button')],
+    ['[data-export-stl]', createElementStub('button')]
   ])
 
   return {
@@ -45,6 +49,7 @@ function createElementStub (tag) {
     type: '',
     dataset: {},
     children: [],
+    disabled: false,
     textContent: '',
     _innerHTML: '',
     listeners: {},
@@ -94,8 +99,20 @@ it('creates a showcase app and selects models', async () => {
   const document = createDocumentStub()
   const evaluations = []
   const renders = []
+  const downloads = []
   const app = createShowcaseApp({
     document,
+    downloaders: {
+      brep (result, options) {
+        downloads.push(['brep', result, options])
+      },
+      step (result, options) {
+        downloads.push(['step', result, options])
+      },
+      stl (result, options) {
+        downloads.push(['stl', result, options])
+      }
+    },
     modelLoader: createModelLoader({
       bracket: '<sol-model><sol-cuboid></sol-cuboid><sol-cuboid></sol-cuboid><sol-cuboid></sol-cuboid><sol-cylinder></sol-cylinder><sol-cylinder></sol-cylinder></sol-model>'
     }),
@@ -126,15 +143,74 @@ it('creates a showcase app and selects models', async () => {
   assert.equal(document.nodes.get('[data-model-list]').children.length, app.models.length)
 
   const result = await app.selectModel('bracket')
+  document.nodes.get('[data-export-step]').listeners.click()
 
   assert.equal(result.shapes[0].tag, 'sol-union')
   assert.equal(evaluations.length, 1)
   assert.equal(renders.length, 1)
+  assert.equal(document.nodes.get('[data-export-step]').disabled, false)
+  assert.equal(document.nodes.get('[data-export-stl]').disabled, false)
+  assert.deepEqual(downloads.map(([type, exportedResult, options]) => [type, exportedResult, options.filename]), [
+    ['step', result, 'bracket.step']
+  ])
   assert.equal(document.nodes.get('[data-title]').textContent, 'Parametric Bracket')
   assert.equal(document.nodes.get('[data-level]').textContent, 'Intermediate · HTML')
   assert.equal(document.nodes.get('[data-source-path]').textContent, './examples/bracket.html')
   assert.match(document.nodes.get('[data-source-code]').innerHTML, /source-token-name">sol-cuboid/)
   assert.match(document.nodes.get('[data-details]').textContent, /sol-cuboid: 3/)
+})
+
+it('ignores export button clicks before a model is ready', () => {
+  const document = createDocumentStub()
+  const downloads = []
+
+  createShowcaseApp({
+    document,
+    downloaders: {
+      brep () {
+        downloads.push('brep')
+      },
+      step () {
+        downloads.push('step')
+      },
+      stl () {
+        downloads.push('stl')
+      }
+    },
+    modelLoader: createModelLoader(),
+    runtime: {},
+    viewerFactory () {
+      return {
+        render () {
+          return this
+        }
+      }
+    }
+  })
+
+  document.nodes.get('[data-export-brep]').listeners.click()
+  assert.deepEqual(downloads, [])
+  assert.equal(document.nodes.get('[data-export-brep]').disabled, true)
+})
+
+it('tolerates missing export buttons in embedded showcase shells', () => {
+  const document = createDocumentStub()
+
+  document.nodes.delete('[data-export-brep]')
+  createShowcaseApp({
+    document,
+    modelLoader: createModelLoader(),
+    runtime: {},
+    viewerFactory () {
+      return {
+        render () {
+          return this
+        }
+      }
+    }
+  })
+
+  assert.equal(document.nodes.get('[data-export-step]').disabled, true)
 })
 
 it('uses sol-viewer refresh when the showcase viewer target provides it', async () => {
@@ -199,6 +275,7 @@ it('reports showcase evaluation errors', async () => {
   await assert.rejects(() => app.selectModel('primitives'), error)
 
   assert.equal(clears, 1)
+  assert.equal(document.nodes.get('[data-export-step]').disabled, true)
   assert.equal(document.nodes.get('[data-details]').textContent, 'Evaluation failed: kernel failed')
   assert.equal(formatEvaluationError('bad input'), 'Evaluation failed: bad input')
   assert.equal(formatEvaluationError({
@@ -317,6 +394,9 @@ it('formats model details and marks selected buttons', () => {
     ),
     '<showcase-enclosure></showcase-enclosure>'
   )
+  assert.equal(exportFilename({ id: 'Profile Operations!' }, 'step'), 'profile-operations.step')
+  assert.equal(exportFilename({ id: '---' }, 'brep'), 'solidark-model.brep')
+  assert.equal(exportFilename(null, 'stl'), 'solidark-model.stl')
 })
 
 it('configures showcase kernel loading modes', async () => {

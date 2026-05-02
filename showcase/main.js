@@ -1,5 +1,10 @@
 import { SolidarkRuntime } from '../lib/runtime/index.js'
 import { createViewer } from '../lib/external/viewer/renderer.js'
+import {
+  downloadResultToBrep,
+  downloadResultToStep,
+  downloadResultToStl
+} from '../lib/export/index.js'
 import './examples/components/enclosure.js'
 import './examples/components/lofted-handle.js'
 import { configureShowcaseKernel } from './kernel.js'
@@ -17,6 +22,11 @@ const HTML_ESCAPES = Object.freeze({
 
 export function createShowcaseApp ({
   document,
+  downloaders = {
+    brep: downloadResultToBrep,
+    step: downloadResultToStep,
+    stl: downloadResultToStl
+  },
   modelLoader = loadShowcaseModel,
   runtime = SolidarkRuntime,
   viewerFactory = createViewer
@@ -30,9 +40,21 @@ export function createShowcaseApp ({
   const sourceCode = document.querySelector('[data-source-code]')
   const sourcePath = document.querySelector('[data-source-path]')
   const viewerTarget = document.querySelector('[data-viewer]')
+  const exportButtons = {
+    brep: document.querySelector('[data-export-brep]'),
+    step: document.querySelector('[data-export-step]'),
+    stl: document.querySelector('[data-export-stl]')
+  }
   const viewer = typeof viewerTarget.refresh === 'function'
     ? viewerTarget
     : viewerFactory(viewerTarget)
+  const selection = {
+    model: null,
+    result: null
+  }
+
+  setupExportButtons(exportButtons, selection, downloaders)
+  setExportButtonsEnabled(exportButtons, false)
 
   async function selectModel (id) {
     const summaryModel = getShowcaseModel(id)
@@ -43,6 +65,9 @@ export function createShowcaseApp ({
     details.textContent = 'Evaluating model...'
     sourcePath.textContent = summaryModel.source
     sourceCode.innerHTML = ''
+    selection.model = summaryModel
+    selection.result = null
+    setExportButtonsEnabled(exportButtons, false)
 
     let result
 
@@ -56,9 +81,13 @@ export function createShowcaseApp ({
       result = typeof viewer.refresh === 'function'
         ? await viewer.refresh(element, { runtime })
         : await renderWithViewer(viewer, runtime, element)
+      selection.result = result
       details.textContent = formatModelDetails(result, countModelTags(model.markup))
       markSelected(list, summaryModel.id)
+      setExportButtonsEnabled(exportButtons, true)
     } catch (error) {
+      selection.result = null
+      setExportButtonsEnabled(exportButtons, false)
       clearViewer(viewer)
       details.textContent = formatEvaluationError(error)
       throw error
@@ -74,6 +103,41 @@ export function createShowcaseApp ({
     models: listShowcaseSummaries(),
     viewer
   }
+}
+
+function setupExportButtons (buttons, selection, downloaders) {
+  for (const [format, button] of Object.entries(buttons)) {
+    if (!button || typeof button.addEventListener !== 'function') {
+      continue
+    }
+
+    button.addEventListener('click', () => {
+      if (!selection.result) {
+        return
+      }
+
+      downloaders[format](selection.result, {
+        filename: exportFilename(selection.model, format)
+      })
+    })
+  }
+}
+
+function setExportButtonsEnabled (buttons, enabled) {
+  for (const button of Object.values(buttons)) {
+    if (button) {
+      button.disabled = !enabled
+    }
+  }
+}
+
+export function exportFilename (model, extension) {
+  const name = String(model?.id || 'solidark-model')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '') || 'solidark-model'
+
+  return `${name}.${extension}`
 }
 
 async function renderWithViewer (viewer, runtime, element) {

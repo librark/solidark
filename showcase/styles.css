@@ -88,7 +88,7 @@ body {
 
 .model-header {
   display: grid;
-  grid-template-columns: minmax(220px, 360px) 1fr;
+  grid-template-columns: minmax(220px, 360px) auto 1fr;
   gap: 24px;
   align-items: end;
 }
@@ -109,6 +109,32 @@ body {
   font-size: 30px;
   line-height: 1.15;
   margin: 4px 0 0;
+}
+
+.export-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.export-actions button {
+  appearance: none;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #1f2937;
+  cursor: pointer;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 32px;
+  padding: 8px 10px;
+}
+
+.export-actions button:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .model-stage {

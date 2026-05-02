@@ -114,6 +114,28 @@ export type GlbObjectUrl = {
   url: string;
 };
 
+export type CadExportDownload = {
+  blob: Blob;
+  url: string;
+  anchor: HTMLAnchorElement;
+  filename: string;
+};
+
+export type CadExportOptions = Record<string, unknown> & {
+  Blob?: typeof Blob;
+  document?: Document;
+  filename?: string;
+  kernel?: {
+    group?: (properties?: Record<string, unknown>, children?: KernelShape[]) => KernelShape;
+    toBrep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array;
+    toStep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array;
+    toStl?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array;
+  };
+  mimeType?: string;
+  shape?: "first" | "group";
+  url?: typeof URL;
+};
+
 export type KernelShape = {
   method: string;
   category?: string;
@@ -307,17 +329,26 @@ export function createGlbObjectUrl(
   options?: { generator?: string },
   url?: { createObjectURL?: (blob: Blob) => string }
 ): GlbObjectUrl;
+export function createCadExportBlob(data: string | Uint8Array, mimeType: string, BlobConstructor?: typeof Blob): Blob;
+export function createCadExportObjectUrl(data: string | Uint8Array, options?: CadExportOptions): GlbObjectUrl;
+export function downloadCadExport(data: string | Uint8Array, options?: CadExportOptions): CadExportDownload;
+export function downloadResultToBrep(result: EvaluationResult | KernelShape, options?: CadExportOptions): CadExportDownload;
+export function downloadResultToStep(result: EvaluationResult | KernelShape, options?: CadExportOptions): CadExportDownload;
+export function downloadResultToStl(result: EvaluationResult | KernelShape, options?: CadExportOptions): CadExportDownload;
+export function exportResultToBrep(result: EvaluationResult | KernelShape, options?: CadExportOptions): string | Uint8Array;
+export function exportResultToStep(result: EvaluationResult | KernelShape, options?: CadExportOptions): string | Uint8Array;
+export function exportResultToStl(result: EvaluationResult | KernelShape, options?: CadExportOptions): string | Uint8Array;
 export function exportShapeToBrep(
   entry: KernelShape,
-  options?: Record<string, unknown> & { kernel?: { toBrep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
+  options?: CadExportOptions
 ): string | Uint8Array;
 export function exportShapeToStep(
   entry: KernelShape,
-  options?: Record<string, unknown> & { kernel?: { toStep?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
+  options?: CadExportOptions
 ): string | Uint8Array;
 export function exportShapeToStl(
   entry: KernelShape,
-  options?: Record<string, unknown> & { kernel?: { toStl?: (entry: KernelShape, options?: Record<string, unknown>) => string | Uint8Array } }
+  options?: CadExportOptions
 ): string | Uint8Array;
 
 declare global {

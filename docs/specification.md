@@ -990,6 +990,21 @@ file system and writer APIs for STEP, STL, and BREP, then return the exported
 file contents to the caller. In-memory kernels may return `null` for these
 methods.
 
+Evaluated runtime results should be exportable directly through
+`exportResultToStep(result, options)`, `exportResultToStl(result, options)`,
+and `exportResultToBrep(result, options)`. If the result has a single root
+shape, that shape should be exported directly. If it has multiple root shapes,
+the helper should group them through the active kernel when possible; callers
+may pass `shape: "first"` when they intentionally want to export only the first
+root shape.
+
+Browser-oriented helpers should also be available for download flows:
+`downloadResultToStep(result, options)`, `downloadResultToStl(result, options)`,
+and `downloadResultToBrep(result, options)`. These helpers should create the
+appropriate `Blob`, object URL, hidden anchor, click it, and clean up the object
+URL afterward. The showcase may use these helpers to expose STEP, STL, and BREP
+downloads for every evaluated example.
+
 Initial import targets:
 
 - STEP as an external shape or assembly component.
