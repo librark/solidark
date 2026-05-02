@@ -87,6 +87,11 @@ export type ShapeStyling = {
   color?: unknown;
 };
 
+export function parseTopologySelector(
+  selection: string | number | unknown[],
+  count: number
+): Set<number>;
+
 export type ProjectedTriangle = {
   meshIndex: number;
   vertices: number[][];

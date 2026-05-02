@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { it } from 'node:test'
 
 import {
@@ -57,6 +58,16 @@ it('loads and extracts model markup from standalone showcase documents', async (
   assert.equal(counts['sol-model'], 1)
   assert.equal(counts['sol-cuboid'], 3)
   assert.equal(counts['sol-cylinder'], 2)
+})
+
+it('keeps bracket cutter cylinders oriented through the front faces', async () => {
+  const sourceText = await readFile(new URL('./examples/bracket.html', import.meta.url), 'utf8')
+  const markup = extractShowcaseMarkup(sourceText)
+  const counts = countModelTags(markup)
+
+  assert.equal(counts['sol-cylinder'], 2)
+  assert.equal(counts['sol-rotate'], 2)
+  assert.equal(markup.includes('<sol-rotate by="90 0 0">'), true)
 })
 
 it('extracts component showcase roots and reports missing model markers', () => {
