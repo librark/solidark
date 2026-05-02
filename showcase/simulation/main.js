@@ -29,14 +29,6 @@ const defaultFiveBar = Object.freeze({
   effectorTravel: 0.32
 })
 
-const cadLinkStyles = Object.freeze({
-  base: { color: '#94a3b8', thickness: 60 },
-  left_crank: { color: '#3bdc9f', thickness: 60 },
-  right_crank: { color: '#bd94fa', thickness: 60 },
-  left_coupler: { color: '#57bdf8', thickness: 50 },
-  right_coupler: { color: '#fa7d6b', thickness: 50 }
-})
-
 export function createFiveBarState (time, options = {}) {
   const config = { ...defaultFiveBar, ...options }
   const leftBase = [-config.baseWidth / 2, 0, 0]
@@ -91,22 +83,6 @@ export function createFiveBarRuntime (robot, factory, options = {}) {
   }
 }
 
-export function createCadModelMarkup (state = createFiveBarState(0)) {
-  return [
-    cadLinkMarkup('base', state.links.base),
-    cadLinkMarkup('left_crank', state.links.left_crank),
-    cadLinkMarkup('right_crank', state.links.right_crank),
-    cadLinkMarkup('left_coupler', state.links.left_coupler),
-    cadLinkMarkup('right_coupler', state.links.right_coupler),
-    cadEffectorMarkup(state.links.end_effector)
-  ].join('\n')
-}
-
-export function renderCadModel (model, state = createFiveBarState(0)) {
-  model.innerHTML = createCadModelMarkup(state)
-  return model
-}
-
 export function renderRobotJson (document, robot) {
   const target = document.querySelector('[data-robot-json]')
 
@@ -117,23 +93,23 @@ export function renderRobotJson (document, robot) {
 export function createBabylonFactory (BABYLON, scene) {
   return {
     createLink (link) {
-      const mesh = BABYLON.MeshBuilder.CreateBox(link.name, {
-        depth: 0.06,
-        height: 0.06,
-        width: 1
-      }, scene)
+      const descriptor = simulationDescriptorForLink(link)
+      const mesh = createSimulationMesh(BABYLON, scene, link, descriptor)
       const material = new BABYLON.StandardMaterial(`${link.name}-material`, scene)
 
-      material.diffuseColor = colorForLink(BABYLON, link.name)
+      material.diffuseColor = colorForLink(BABYLON, link)
       material.specularColor = new BABYLON.Color3(0.18, 0.2, 0.24)
       mesh.material = material
-      mesh.metadata = { solidark: link }
+      mesh.metadata = { solidark: link, solidarkSimulation: descriptor }
       return mesh
     },
     updateLink (mesh, transform) {
       mesh.position = new BABYLON.Vector3(...transform.position)
       mesh.rotation.z = transform.rotation
-      mesh.scaling.x = transform.length
+
+      if (mesh.metadata?.solidarkSimulation?.kind !== 'sphere') {
+        mesh.scaling.x = transform.length
+      }
     }
   }
 }
@@ -155,7 +131,6 @@ export async function bootSimulation ({
   const cadModel = document.querySelector('#five-bar-geometry')
   const cadViewer = document.querySelector('[data-robot-viewer]')
   const robot = await compileRobotDefinition(robotElement)
-  const cadState = createFiveBarState(0)
   const engine = new BABYLON.Engine(canvas, true)
   const scene = new BABYLON.Scene(engine)
   const camera = new BABYLON.ArcRotateCamera('camera', Math.PI / 2, Math.PI / 2, 4.2, new BABYLON.Vector3(0, 0.55, 0), scene)
@@ -171,7 +146,6 @@ export async function bootSimulation ({
     mechanismRuntime.update(time)
   })
   renderRobotJson(document, robot)
-  renderCadModel(cadModel, cadState)
   mechanismRuntime.update(time)
   scene.render()
   engine.runRenderLoop(() => scene.render())
@@ -205,48 +179,80 @@ function segmentTransform (start, end) {
   }
 }
 
-function cadLinkMarkup (name, transform) {
-  const style = cadLinkStyles[name]
-  const size = [
-    formatMillimeters(transform.length),
-    style.thickness,
-    style.thickness
-  ].join(' ')
+function createSimulationMesh (BABYLON, scene, link, descriptor) {
+  if (descriptor.kind === 'sphere') {
+    return BABYLON.MeshBuilder.CreateSphere(link.name, {
+      diameter: descriptor.diameter
+    }, scene)
+  }
 
-  return `<sol-translate by="${formatVector(transform.position)}">
-  <sol-rotate z="${formatDegrees(transform.rotation)}">
-    <sol-color value="${style.color}">
-      <sol-cuboid size="${size}"></sol-cuboid>
-    </sol-color>
-  </sol-rotate>
-</sol-translate>`
+  return BABYLON.MeshBuilder.CreateBox(link.name, {
+    depth: descriptor.depth,
+    height: descriptor.height,
+    width: 1
+  }, scene)
 }
 
-function cadEffectorMarkup (transform) {
-  return `<sol-translate by="${formatVector(transform.position)}">
-  <sol-color value="#fbbf24">
-    <sol-sphere radius="${formatMillimeters(transform.length / 2)}"></sol-sphere>
-  </sol-color>
-</sol-translate>`
+function simulationDescriptorForLink (link) {
+  const primitive = firstPrimitive(link.visuals)
+  const kind = primitive?.tag === 'sol-sphere' ? 'sphere' : 'box'
+  const color = firstVisualColor(link.visuals) ?? fallbackColorForName(link.name)
+
+  if (kind === 'sphere') {
+    const radius = Number(primitive.properties.radius ?? 0.08)
+
+    return { color, diameter: radius * 2, kind }
+  }
+
+  const size = primitive?.properties?.size
+  const depth = Array.isArray(size) ? Number(size[1] ?? 0.06) : Number(primitive?.properties?.depth ?? 0.06)
+  const height = Array.isArray(size) ? Number(size[2] ?? depth) : Number(primitive?.properties?.height ?? depth)
+
+  return { color, depth, height, kind }
 }
 
-function formatVector (vector) {
-  return vector.map(formatMillimeters).join(' ')
+function firstPrimitive (descriptors = []) {
+  for (const descriptor of descriptors) {
+    if (['sol-cuboid', 'sol-sphere'].includes(descriptor.tag)) {
+      return descriptor
+    }
+
+    const child = firstPrimitive(descriptor.children || [])
+
+    if (child) {
+      return child
+    }
+  }
+
+  return null
 }
 
-function formatMillimeters (value) {
-  return formatNumber(value * 1000)
+function firstVisualColor (descriptors = []) {
+  for (const descriptor of descriptors) {
+    const properties = descriptor.properties || {}
+    const color = properties.color ??
+      properties.colour ??
+      (descriptor.tag === 'sol-color' ? properties.value : undefined)
+
+    if (color !== undefined) {
+      return color
+    }
+
+    const childColor = firstVisualColor(descriptor.children || [])
+
+    if (childColor !== undefined) {
+      return childColor
+    }
+  }
+
+  return undefined
 }
 
-function formatDegrees (radians) {
-  return formatNumber(radians * 180 / Math.PI)
+function colorForLink (BABYLON, link) {
+  return new BABYLON.Color3(...colorVector(simulationDescriptorForLink(link).color))
 }
 
-function formatNumber (value) {
-  return String(Number(value.toFixed(3)))
-}
-
-function colorForLink (BABYLON, name) {
+function fallbackColorForName (name) {
   const colors = {
     base: [0.68, 0.74, 0.84],
     end_effector: [0.98, 0.72, 0.28],
@@ -256,8 +262,69 @@ function colorForLink (BABYLON, name) {
     right_crank: [0.74, 0.58, 0.98]
   }
 
-  return new BABYLON.Color3(...(colors[name] || [0.82, 0.86, 0.92]))
+  return colors[name] || [0.82, 0.86, 0.92]
 }
+
+function colorVector (value) {
+  if (Array.isArray(value)) {
+    return normalizeColorVector(value)
+  }
+
+  if (typeof value === 'string') {
+    return colorStringVector(value)
+  }
+
+  return [0.82, 0.86, 0.92]
+}
+
+function normalizeColorVector (value) {
+  const vector = value.slice(0, 3).map(Number)
+  const scale = vector.some((entry) => entry > 1) ? 255 : 1
+
+  return vector.map((entry) => entry / scale)
+}
+
+function colorStringVector (value) {
+  const color = value.trim().toLowerCase()
+  const named = namedColors[color]
+
+  if (named) {
+    return named
+  }
+
+  const hex = color.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+
+  if (hex) {
+    return hexColorVector(hex[1])
+  }
+
+  return [0.82, 0.86, 0.92]
+}
+
+function hexColorVector (hex) {
+  const normalized = hex.length === 3
+    ? hex.split('').map((entry) => `${entry}${entry}`).join('')
+    : hex.slice(0, 6)
+
+  return [0, 2, 4].map((index) => parseInt(normalized.slice(index, index + 2), 16) / 255)
+}
+
+const namedColors = Object.freeze({
+  black: [0, 0, 0],
+  blue: [0, 0, 1],
+  cyan: [0, 1, 1],
+  gray: [0.5, 0.5, 0.5],
+  green: [0, 0.5, 0],
+  grey: [0.5, 0.5, 0.5],
+  lime: [0, 1, 0],
+  magenta: [1, 0, 1],
+  orange: [1, 0.647, 0],
+  pink: [1, 0.753, 0.796],
+  purple: [0.5, 0, 0.5],
+  red: [1, 0, 0],
+  white: [1, 1, 1],
+  yellow: [1, 1, 0]
+})
 
 export async function loadSolidarkElements () {
   const { defineSolidarkElements } = await import('../../lib/elements.js')

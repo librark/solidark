@@ -206,56 +206,86 @@
       </section>
     </main>
 
-    <sol-model id="five-bar-geometry" hidden></sol-model>
+    <sol-model id="five-bar-geometry" hidden>
+      <sol-robot name="five-bar">
+        <sol-robot-link name="base">
+          <sol-robot-visual>
+            <sol-color value="#94a3b8">
+              <sol-cuboid size="1800 60 60"></sol-cuboid>
+            </sol-color>
+          </sol-robot-visual>
+          <sol-robot-inertial mass="2"></sol-robot-inertial>
+        </sol-robot-link>
 
-    <sol-robot name="five-bar" hidden>
-      <sol-robot-link name="base">
-        <sol-robot-visual>
-          <sol-cuboid size="1800 80 80"></sol-cuboid>
-        </sol-robot-visual>
-        <sol-robot-inertial mass="2"></sol-robot-inertial>
-      </sol-robot-link>
+        <sol-robot-link name="left_crank">
+          <sol-robot-visual>
+            <sol-translate by="-697.977 254.581 0">
+              <sol-rotate z="51.566">
+                <sol-color value="#3bdc9f">
+                  <sol-cuboid size="650 60 60"></sol-cuboid>
+                </sol-color>
+              </sol-rotate>
+            </sol-translate>
+          </sol-robot-visual>
+          <sol-robot-inertial mass="0.2"></sol-robot-inertial>
+        </sol-robot-link>
 
-      <sol-robot-link name="left_crank">
-        <sol-robot-visual>
-          <sol-cuboid size="650 60 60"></sol-cuboid>
-        </sol-robot-visual>
-        <sol-robot-inertial mass="0.2"></sol-robot-inertial>
-      </sol-robot-link>
+        <sol-robot-link name="right_crank">
+          <sol-robot-visual>
+            <sol-translate by="697.977 254.581 0">
+              <sol-rotate z="128.434">
+                <sol-color value="#bd94fa">
+                  <sol-cuboid size="650 60 60"></sol-cuboid>
+                </sol-color>
+              </sol-rotate>
+            </sol-translate>
+          </sol-robot-visual>
+          <sol-robot-inertial mass="0.2"></sol-robot-inertial>
+        </sol-robot-link>
 
-      <sol-robot-link name="right_crank">
-        <sol-robot-visual>
-          <sol-cuboid size="650 60 60"></sol-cuboid>
-        </sol-robot-visual>
-        <sol-robot-inertial mass="0.2"></sol-robot-inertial>
-      </sol-robot-link>
+        <sol-robot-link name="left_coupler">
+          <sol-robot-visual>
+            <sol-translate by="-247.977 914.581 0">
+              <sol-rotate z="58.548">
+                <sol-color value="#57bdf8">
+                  <sol-cuboid size="950.488 50 50"></sol-cuboid>
+                </sol-color>
+              </sol-rotate>
+            </sol-translate>
+          </sol-robot-visual>
+          <sol-robot-inertial mass="0.18"></sol-robot-inertial>
+        </sol-robot-link>
 
-      <sol-robot-link name="left_coupler">
-        <sol-robot-visual>
-          <sol-cuboid size="1100 50 50"></sol-cuboid>
-        </sol-robot-visual>
-        <sol-robot-inertial mass="0.18"></sol-robot-inertial>
-      </sol-robot-link>
+        <sol-robot-link name="right_coupler">
+          <sol-robot-visual>
+            <sol-translate by="247.977 914.581 0">
+              <sol-rotate z="121.452">
+                <sol-color value="#fa7d6b">
+                  <sol-cuboid size="950.488 50 50"></sol-cuboid>
+                </sol-color>
+              </sol-rotate>
+            </sol-translate>
+          </sol-robot-visual>
+          <sol-robot-inertial mass="0.18"></sol-robot-inertial>
+        </sol-robot-link>
 
-      <sol-robot-link name="right_coupler">
-        <sol-robot-visual>
-          <sol-cuboid size="1100 50 50"></sol-cuboid>
-        </sol-robot-visual>
-        <sol-robot-inertial mass="0.18"></sol-robot-inertial>
-      </sol-robot-link>
+        <sol-robot-link name="end_effector">
+          <sol-robot-visual>
+            <sol-translate by="0 1320 0">
+              <sol-color value="#fbbf24">
+                <sol-sphere radius="80"></sol-sphere>
+              </sol-color>
+            </sol-translate>
+          </sol-robot-visual>
+          <sol-robot-inertial mass="0.12"></sol-robot-inertial>
+        </sol-robot-link>
 
-      <sol-robot-link name="end_effector">
-        <sol-robot-visual>
-          <sol-sphere radius="80"></sol-sphere>
-        </sol-robot-visual>
-        <sol-robot-inertial mass="0.12"></sol-robot-inertial>
-      </sol-robot-link>
-
-      <sol-robot-joint name="left_motor" type="revolute" parent="base" child="left_crank" origin="-900 0 0" axis="0 0 1"></sol-robot-joint>
-      <sol-robot-joint name="right_motor" type="revolute" parent="base" child="right_crank" origin="900 0 0" axis="0 0 1"></sol-robot-joint>
-      <sol-robot-actuator name="left_motor_drive" joint="left_motor" kind="servo"></sol-robot-actuator>
-      <sol-robot-actuator name="right_motor_drive" joint="right_motor" kind="servo"></sol-robot-actuator>
-    </sol-robot>
+        <sol-robot-joint name="left_motor" type="revolute" parent="base" child="left_crank" origin="-900 0 0" axis="0 0 1"></sol-robot-joint>
+        <sol-robot-joint name="right_motor" type="revolute" parent="base" child="right_crank" origin="900 0 0" axis="0 0 1"></sol-robot-joint>
+        <sol-robot-actuator name="left_motor_drive" joint="left_motor" kind="servo"></sol-robot-actuator>
+        <sol-robot-actuator name="right_motor_drive" joint="right_motor" kind="servo"></sol-robot-actuator>
+      </sol-robot>
+    </sol-model>
 
     <script type="module" src="./main.js"></script>
   </body>
