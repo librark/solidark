@@ -2,6 +2,8 @@ export class Component extends HTMLElement {
   static tag: string;
   static category: string;
   static geometryKind: string | null;
+  static shapeGeometryKind: string | null | undefined;
+  static childGeometryKinds: string[] | string | null | undefined;
   static defaultProperties: Record<string, unknown>;
   static observedAttributes: string[];
   static shapeTag: string | null;
@@ -24,6 +26,11 @@ export class Component extends HTMLElement {
     kernel: Kernel
   ): KernelShape | null;
   static decorateKernelShape(shape: KernelShape): KernelShape;
+  static validateChildGeometry(
+    children?: KernelShape[],
+    allowedKinds?: string[] | string | null
+  ): typeof Component;
+  static childGeometryKindsForValidation(): string[] | string | null;
   readonly kernel: unknown;
   readonly properties: Record<string, unknown>;
   content: string;
@@ -31,6 +38,13 @@ export class Component extends HTMLElement {
   render(): this;
   load(): Promise<unknown>;
   evaluate(): Promise<EvaluationResult>;
+}
+
+export class SolidarkChildGeometryError extends TypeError {
+  componentTag: string;
+  childTag: string;
+  childGeometryKind: string;
+  allowedGeometryKinds: string[];
 }
 
 export class ViewerComponent extends Component {
@@ -162,6 +176,7 @@ export type KernelShape = {
   method: string;
   category?: string;
   tag?: string;
+  geometryKind?: string;
   properties: Record<string, unknown>;
   children: KernelShape[];
   styling?: ShapeStyling;

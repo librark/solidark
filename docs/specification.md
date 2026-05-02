@@ -1061,6 +1061,14 @@ should include both the low-level kernel cause and a short suggestion, such as
 checking numeric attributes, kernel import/WASM configuration, topology
 selectors, or whether the shape can be triangulated for display.
 
+Each evaluated shape should carry a `geometryKind` such as `solid`, `surface`,
+`sketch`, `shape`, `mesh`, or `assembly`. Components should declare which child
+geometry kinds they accept so invalid nesting is reported before it reaches the
+kernel. For example, profile-based features such as `<sol-extrude>` should
+accept sketch or surface children, while solid modifiers such as `<sol-fillet>`
+should reject sketch and mesh children with an `invalid-child-geometry-kind`
+diagnostic.
+
 ## Package Structure
 
 Potential package layout:
