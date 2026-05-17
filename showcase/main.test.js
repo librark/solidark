@@ -144,6 +144,8 @@ it('creates a showcase app and selects models', async () => {
 
   const result = await app.selectModel('bracket')
   document.nodes.get('[data-export-step]').listeners.click()
+  document.nodes.get('[data-export-stl]').listeners.click()
+  document.nodes.get('[data-export-brep]').listeners.click()
 
   assert.equal(result.shapes[0].tag, 'sol-union')
   assert.equal(evaluations.length, 1)
@@ -151,7 +153,9 @@ it('creates a showcase app and selects models', async () => {
   assert.equal(document.nodes.get('[data-export-step]').disabled, false)
   assert.equal(document.nodes.get('[data-export-stl]').disabled, false)
   assert.deepEqual(downloads.map(([type, exportedResult, options]) => [type, exportedResult, options.filename]), [
-    ['step', result, 'bracket.step']
+    ['step', result, 'bracket.step'],
+    ['stl', result, 'bracket.stl'],
+    ['brep', result, 'bracket.brep']
   ])
   assert.equal(document.nodes.get('[data-title]').textContent, 'Parametric Bracket')
   assert.equal(document.nodes.get('[data-level]').textContent, 'Intermediate · HTML')
