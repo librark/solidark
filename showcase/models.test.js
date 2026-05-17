@@ -29,8 +29,20 @@ it('exports a range of showcase model documents', () => {
 
 it('gets models by id and falls back to the first model', () => {
   assert.equal(getShowcaseModel('bracket').title, 'Parametric Bracket')
+  assert.equal(getShowcaseModel('imported-stl').source, './examples/imported-stl.html')
   assert.equal(getShowcaseModel('topology-features').source, './examples/topology-features.html')
   assert.equal(getShowcaseModel('missing').id, 'primitives')
+})
+
+it('loads the imported STL showcase markup', async () => {
+  const sourceText = await readFile(new URL('./examples/imported-stl.html', import.meta.url), 'utf8')
+  const markup = extractShowcaseMarkup(sourceText)
+  const counts = countModelTags(markup)
+
+  assert.equal(counts['sol-stl'], 1)
+  assert.equal(counts['sol-cuboid'], 1)
+  assert.equal(counts['sol-cylinder'], 1)
+  assert.equal(markup.includes('https://threejs.org/examples/models/stl/ascii/slotted_disk.stl'), true)
 })
 
 it('loads and extracts model markup from standalone showcase documents', async () => {

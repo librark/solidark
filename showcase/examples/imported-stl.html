@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solidark Imported STL Assembly</title>
+    <link rel="stylesheet" href="../styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "opencascade.js": "/node_modules/opencascade.js/dist/opencascade.wasm.js",
+          "three": "/node_modules/three/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="standalone-shell">
+      <header class="standalone-header">
+        <a href="../">Showcase</a>
+        <p>Intermediate external mesh import</p>
+        <h1>Imported STL Assembly</h1>
+      </header>
+      <sol-model id="imported-stl-assembly" class="source-model" data-showcase-model>
+        <sol-group>
+          <sol-translate by="-42 0 8">
+            <sol-scale by="42 42 42">
+              <sol-stl
+                src="https://threejs.org/examples/models/stl/ascii/slotted_disk.stl"
+                color="#57bdf8">
+              </sol-stl>
+            </sol-scale>
+          </sol-translate>
+          <sol-translate by="84 0 0">
+            <sol-color value="#f59e0b">
+              <sol-cuboid size="44 28 10"></sol-cuboid>
+            </sol-color>
+          </sol-translate>
+          <sol-translate by="84 0 18">
+            <sol-cylinder radius="8" height="26" color="#2f9f7b"></sol-cylinder>
+          </sol-translate>
+        </sol-group>
+      </sol-model>
+      <sol-viewer class="viewer-surface" for="imported-stl-assembly"></sol-viewer>
+    </main>
+    <script type="module" src="../standalone.js"></script>
+  </body>
+</html>

@@ -24,6 +24,14 @@ export const showcaseModels = Object.freeze([
     summary: 'A wheel-like solid using repeated subtractive cuboids around a cylinder.'
   },
   {
+    id: 'imported-stl',
+    title: 'Imported STL Assembly',
+    level: 'Intermediate',
+    format: 'HTML',
+    source: './examples/imported-stl.html',
+    summary: 'A remote STL mesh fetched from the web and arranged with native Solidark primitives.'
+  },
+  {
     id: 'topology-features',
     title: 'Topology Features',
     level: 'Intermediate',

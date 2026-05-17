@@ -1035,6 +1035,26 @@ Initial import targets:
   mesh workflows.
 - BREP as a kernel-native external shape component.
 
+External import components (`sol-step`, `sol-stl`, and `sol-brep`) should support
+both inline content and fetch-backed browser loading. Inline properties (`data`,
+`source`, `content`, or `text`) are authoritative. When inline content is absent,
+`src` and `href` should be treated as URLs and fetched before model evaluation so
+remote imports can be used from static HTML documents. Kernel-oriented `path`
+and `file` properties may still refer to files already present in the active
+kernel's virtual filesystem.
+
+Remote STL imports should be manageable in mixed visualization documents,
+including documents that also contain native Solidark primitives. Because STL is
+a mesh format rather than a precise B-Rep exchange format, Solidark may keep the
+OpenCascade-imported shape available while using parsed mesh data as the
+authoritative viewer representation for grouping, styling, and basic placement.
+
+When the active B-Rep kernel cannot convert an STL file into a non-null kernel
+shape, Solidark should still parse the STL as renderable triangle mesh data for
+visualization. Mesh-only STL imports should support styling and basic
+mesh-space placement transforms, while boolean and feature operations remain
+limited to imported files that the kernel can represent as B-Rep shapes.
+
 Imported STEP assemblies should preserve their hierarchy when the imported file
 contains assembly structure and the active kernel exposes enough document data to
 recover it. Imported shapes should participate in transforms, booleans,
