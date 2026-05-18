@@ -1107,6 +1107,8 @@ entrypoints:
 
 - `@librark/solidark`: core convenience exports for common authoring and evaluation
   workflows.
+- `@librark/solidark/cdn`: CDN bootstrap helpers for standalone HTML usage
+  without a local npm install, bundler, or import map.
 - `@librark/solidark/component`: base `Component` APIs and template/parsing helpers for
   user-defined parametric elements.
 - `@librark/solidark/elements`: aggregate built-in component exports and registration

@@ -3,6 +3,7 @@ import { it } from 'node:test'
 
 const publicEntrypoints = Object.freeze([
   '@librark/solidark',
+  '@librark/solidark/cdn',
   '@librark/solidark/component',
   '@librark/solidark/elements',
   '@librark/solidark/export',
@@ -27,14 +28,15 @@ it('package exports the supported public entrypoints', async () => {
   const modules = await Promise.all(publicEntrypoints.map((specifier) => import(specifier)))
 
   assert.equal(typeof modules[0].Component, 'function')
-  assert.equal(typeof modules[1].Component, 'function')
-  assert.equal(typeof modules[1].html, 'function')
-  assert.equal(typeof modules[2].defineSolidarkElements, 'function')
-  assert.equal(typeof modules[3].exportResultToStep, 'function')
-  assert.equal(typeof modules[4].createOpenCascadeKernel, 'function')
-  assert.equal(typeof modules[5].compileRobotDefinition, 'function')
-  assert.equal(typeof modules[6].SolidarkRuntime.evaluate, 'function')
-  assert.equal(typeof modules[7].createViewer, 'function')
+  assert.equal(typeof modules[1].bootSolidarkCdn, 'function')
+  assert.equal(typeof modules[2].Component, 'function')
+  assert.equal(typeof modules[2].html, 'function')
+  assert.equal(typeof modules[3].defineSolidarkElements, 'function')
+  assert.equal(typeof modules[4].exportResultToStep, 'function')
+  assert.equal(typeof modules[5].createOpenCascadeKernel, 'function')
+  assert.equal(typeof modules[6].compileRobotDefinition, 'function')
+  assert.equal(typeof modules[7].SolidarkRuntime.evaluate, 'function')
+  assert.equal(typeof modules[8].createViewer, 'function')
 })
 
 it('package keeps internal module paths private', async () => {

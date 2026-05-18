@@ -21,6 +21,19 @@ Primary exports include:
 
 Prefer a vertical entrypoint when you only need one subsystem.
 
+## `@librark/solidark/cdn`
+
+CDN bootstrap helpers for plain HTML usage.
+
+- `bootSolidarkCdn()`
+- `configureCdnKernel()`
+- `createOpenCascadeCdnInitOptions()`
+- `loadCdnThree()`
+- `cdnPackageUrl()`
+- `Component`
+- `html`
+- `SolidarkRuntime`
+
 ## `@librark/solidark/component`
 
 Base component APIs for user-defined parametric elements.

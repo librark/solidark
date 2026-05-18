@@ -31,6 +31,7 @@ Before publishing, install the packed tarball into a fresh project and verify:
 - `import { defineSolidarkElements } from "@librark/solidark/elements"` works.
 - `import { SolidarkRuntime } from "@librark/solidark/runtime"` works.
 - `import { createOpenCascadeKernel } from "@librark/solidark/kernel"` works.
+- `import { bootSolidarkCdn } from "@librark/solidark/cdn"` works.
 - A simple `<sol-model>` evaluates with either the in-memory kernel or
   OpenCascade.js.
 - `npm pack --dry-run` does not include test files.

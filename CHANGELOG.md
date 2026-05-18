@@ -11,3 +11,4 @@ All notable changes to Solidark will be documented in this file.
   styling, viewer helpers, and CAD/mesh export helpers.
 - Robot extension API for deterministic robot definition exports.
 - Public package surface limited to documented vertical entrypoints.
+- CDN bootstrap entrypoint for standalone HTML examples through unpkg.

@@ -14,6 +14,10 @@
       "types": "./lib/component.d.ts",
       "default": "./lib/component.js"
     },
+    "./cdn": {
+      "types": "./lib/cdn.d.ts",
+      "default": "./lib/cdn.js"
+    },
     "./elements": {
       "types": "./lib/elements.d.ts",
       "default": "./lib/elements.js"
@@ -69,6 +73,8 @@
     "opencascade",
     "web-components"
   ],
+  "unpkg": "./lib/cdn.js",
+  "jsdelivr": "./lib/cdn.js",
   "dependencies": {
     "@google/model-viewer": "4.1.0",
     "opencascade.js": "1.1.1",
