@@ -17,18 +17,18 @@ details live in:
 
 The first two official extension domains should be:
 
-- `@solidark/robot`: robot and mechanism definition, including links, joints,
+- `@librark/solidark/robot`: robot and mechanism definition, including links, joints,
   inertials, sensors, actuators, URDF export, engine-neutral JSON robot
   descriptions, mesh assets, and robot package manifests.
-- `@solidark/circuit`: circuit and board definition, including board layout,
+- `@librark/solidark-circuit`: circuit and board definition, including board layout,
   nets, footprints, pads, traces, vias, automatic routing, fabrication outputs,
   KiCad export, Gerber export, and circuit package manifests.
 
-Both namespaces should be flat at the public package level:
+Official extension package paths should stay under the `@librark` npm scope:
 
 ```js
-import '@solidark/robot'
-import '@solidark/circuit'
+import '@librark/solidark/robot'
+import '@librark/solidark-circuit'
 ```
 
 Internal modules may still be organized by concern. For example, circuit

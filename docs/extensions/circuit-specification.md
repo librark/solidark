@@ -2,7 +2,7 @@
 
 Status: draft 0.1
 
-Package: `@solidark/circuit`
+Package: `@librark/solidark-circuit`
 
 The circuit extension should let Solidark describe electronic assemblies using
 the same declarative component style as mechanical CAD. It should learn from
@@ -280,4 +280,3 @@ Exit criteria:
 - KiCad's documented S-expression board and schematic formats make it a strong
   review and editing target:
   https://dev-docs.kicad.org/en/file-formats/sexpr-pcb/
-

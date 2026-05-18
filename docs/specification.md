@@ -223,7 +223,7 @@ consistently.
 ### Component Example
 
 ```js
-import { Component, html } from "solidark";
+import { Component, html } from "@librark/solidark/component";
 
 export class MountingPlate extends Component {
   static tag = "mounting-plate";
@@ -417,9 +417,8 @@ Registration requirements:
 - Each class should expose a stable static `tag` name.
 - `Component.define()` should register a class under its static tag by default.
 - Each built-in component module should call `define()` in its own source file,
-  so importing `solidark/primitives/cuboid`, `solidark/feature/step`, or any
-  aggregate index that re-exports them makes the corresponding browser element
-  available immediately.
+  so importing `@librark/solidark/elements` makes the corresponding browser
+  elements available immediately.
 - The package may keep `defineSolidarkElements()` as a compatibility helper that
   returns the built-in component list, but it should not be the primary
   registration mechanism.
@@ -701,15 +700,15 @@ participate in caching keys.
 ## Kernel Adapter
 
 OpenCascade.js integration should live behind a kernel adapter. The abstract
-kernel contract and `globalThis.kernel` accessors should live under
-`solidark/base/kernel` so component classes can depend on a small stable
-interface. Concrete runtime adapters should live under `solidark/runtime/kernel`
-so the runtime can use different backends without changing component code:
+kernel contract and `globalThis.kernel` accessors should be exposed through
+`@librark/solidark/kernel` so component classes can depend on a small stable
+interface. Concrete runtime adapters should stay internally split by backend so
+the runtime can use different backends without changing component code:
 
-- `solidark/base/kernel`: the abstract `Kernel` class, global kernel accessors,
+- `@librark/solidark/kernel`: the abstract `Kernel` class, global kernel accessors,
   and the deterministic `MemoryKernel` implementation for unit tests,
   snapshots, and lightweight previews.
-- `solidark/runtime/kernel/opencascade`: the default `OpencascadeKernel`
+- Internal OpenCascade adapter modules: the default `OpencascadeKernel`
   implementation backed by OpenCascade.js.
 
 Because Web Component constructors cannot receive arbitrary constructor
@@ -717,9 +716,8 @@ arguments from markup, the active kernel should be stored on `globalThis.kernel`
 The runtime should read that global kernel during `load()`. If no kernel has
 been installed, `load()` should install the OpenCascade adapter by default.
 Tests should replace `globalThis.kernel` with the in-memory adapter before
-evaluation. The `solidark/kernel/*` package paths may remain compatibility
-aliases for the current public kernel modules, but source ownership should
-follow the `base/kernel` and `runtime/kernel` split. The `base/kernel`
+evaluation. Package wildcard paths should stay private; source ownership should
+follow the internal `base/kernel` and `runtime/kernel` split. The `base/kernel`
 directory must not reference Solidark custom element names, `sol-` tags, DOM
 categories, or any other higher-level library modules. It is a core dependency
 that other library layers may import, not a layer that may import or know about
@@ -783,7 +781,8 @@ kernel is available.
 Recommended shape:
 
 ```js
-import { Component, SolidarkRuntime } from "solidark";
+import { Component } from "@librark/solidark/component";
+import { SolidarkRuntime } from "@librark/solidark/runtime";
 
 await SolidarkRuntime.load();
 
@@ -828,7 +827,7 @@ Runtime requirements:
 - Applications that care about bundle size, workers, caching, or custom
   OpenCascade.js builds should be able to configure the kernel loader before the
   first `load()` call.
-- Unit tests should be able to install `MemoryKernel` from `solidark/base/kernel`
+- Unit tests should be able to install `MemoryKernel` from `@librark/solidark/kernel`
   through `globalThis.kernel` without loading OpenCascade.js or WebAssembly.
 
 ## Evaluation Pipeline
@@ -943,7 +942,7 @@ Viewer requirements:
 - Provide `<sol-viewer>` as an optional Web Component that references a
   Solidark model element, evaluates it, and visualizes the resulting geometry.
 - Keep built-in modeling elements focused on model definition and evaluation;
-  visualization should live in `solidark/viewer` or `solidark/external`.
+  visualization should live in `@librark/solidark/viewer`.
 - Keep the viewer optional for production modeling code so headless tests and
   server-side evaluation do not load browser rendering dependencies.
 - Prefer a Three.js CAD viewport for interactive browser inspection.
@@ -1103,33 +1102,27 @@ diagnostic.
 
 ## Package Structure
 
-Potential package layout:
+The external package should expose only a small set of stable vertical
+entrypoints:
 
-- `solidark`: core public API.
-- `solidark/base`: base `Component` hierarchy and component class helpers.
-- `solidark/structures`: higher-level structural elements such as `sol-model`,
-  with one structure per source file.
-- `solidark/primitives`: primitive element components, with one primitive per
-  source file.
-- `solidark/transform`: transformation element components, with one transform
-  per source file.
-- `solidark/operation`: CSG operation components, with one operation per source
-  file.
-- `solidark/feature`: B-Rep features, sketch actions, and file importers, with
-  one component per source file.
-- `solidark/base/kernel`: abstract `Kernel` class, `MemoryKernel`, and global
-  kernel accessors.
-- `solidark/runtime`: runtime scheduling, loading, flushing, and evaluation.
-- `solidark/runtime/kernel`: kernel selection helpers and concrete runtime
-  adapters.
-- `solidark/runtime/kernel/opencascade`: `OpencascadeKernel` adapter.
-- `solidark/elements`: aggregate built-in component exports and compatibility
+- `@librark/solidark`: core convenience exports for common authoring and evaluation
+  workflows.
+- `@librark/solidark/component`: base `Component` APIs and template/parsing helpers for
+  user-defined parametric elements.
+- `@librark/solidark/elements`: aggregate built-in component exports and registration
   helpers.
-- `solidark/mesh`: optional mesh conversion helpers if they are not part of
-  the core entry point.
-- `solidark/viewer`: optional browser visualization helpers and custom elements.
+- `@librark/solidark/runtime`: runtime scheduling, loading, flushing, diagnostics, and
+  evaluation.
+- `@librark/solidark/kernel`: kernel contracts, in-memory descriptor kernel helpers, and
+  OpenCascade.js adapter helpers.
+- `@librark/solidark/viewer`: browser visualization helpers and custom elements.
+- `@librark/solidark/export`: CAD and mesh export helpers.
+- `@librark/solidark/robot`: robot extension APIs.
 
-The core package should avoid importing viewer integrations by default.
+Internal source folders such as primitives, transforms, operations, features,
+and concrete adapter files may stay split by implementation concern, but they
+should not be exposed through package wildcard exports. New public entrypoints
+should be added only when they represent a durable functionality vertical.
 
 ## Typing Strategy
 

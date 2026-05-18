@@ -2,7 +2,7 @@
 
 Status: draft 0.1
 
-Package: `@solidark/robot`
+Package: `@librark/solidark/robot`
 
 The robot extension should let users define robots, mechanisms, frames, and
 simulation-ready assemblies around Solidark geometry. It should generate
@@ -34,7 +34,7 @@ loader.
 ## Workflow
 
 A Solidark robotics project should define geometry with Solidark core and robot
-semantics with `@solidark/robot`.
+semantics with `@librark/solidark/robot`.
 
 ```html
 <sol-robot name="gantry">
