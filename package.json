@@ -1,6 +1,6 @@
 {
   "name": "@librark/solidark",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Web Component based constructive solid geometry for JavaScript.",
   "type": "module",
   "main": "./lib/index.js",
